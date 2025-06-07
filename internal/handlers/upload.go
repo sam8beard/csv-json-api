@@ -3,6 +3,7 @@ package handlers
 import ( 
 	"net/http"
 	// "github.com/sam8beard/csv-json-api/internal/utils"
+	"os"
 	"fmt"
 	"path/filepath"
 	"net/url"
@@ -24,8 +25,8 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	response.SkippedFiles = []string{}
 	response.ConvertedFiles = []string{} 
 	response.ZipURL = ""
-	response.FilesSkipped = 0
-	response.FilesProcessed = 0
+	response.SkippedCounter = 0
+	response.ConvertedCounter = 0
 
 	if r.Method != "POST" { 
 		http.Error(w, "Only POST allowed", http.StatusMethodNotAllowed)
@@ -42,19 +43,63 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	if len(r.MultipartForm.File) != 0 {
 		if r.MultipartForm.File["files"] != nil { 
 			for _, header := range r.MultipartForm.File["files"] {
-				file_extension := filepath.Ext(header.Filename)
-				if file_extension == ".csv" || file_extension == ".json" {
+				fileExtension := filepath.Ext(header.Filename)
+				if fileExtension == ".csv" || fileExtension == ".json" {
+					fileReader, err := header.Open()
+					if err != nil {
+						fmt.Println("Error: cannot open file")
+						response.SkippedCounter++
+						msg := "file " + header.Filename + " skipped: cannot open file"
+						response.SkippedFiles = append(response.SkippedFiles, msg)
+						continue
+					} // if 
 					
-					// pass to validate then pass to convert? or
-					// call validate in convert? 
-
+					if fileExtension == ".csv" {
+						err := utils.ValidateCSV(fileReader)
+						fileReader.Close()
+						if err != nil {
+							response.SkippedCounter++
+							msg := "file " + header.Filename + " skipped: incorrect formatting"
+							response.SkippedFiles = append(response.SkippedFiles, msg)
+							continue
+						} // if 
+						// Execute convert here
+						fileReader, err := header.Open()
+						if err != nil {
+							fmt.Println("Error: cannot open file")
+							response.SkippedCounter++
+							msg := "file " + header.Filename + " skipped: cannot open file"
+							response.SkippedFiles = append(response.SkippedFiles, msg)
+							continue
+						} // if 
+						convertedFile := utils.ConvertToJSON(fileReader)
+						fileReader.Close()
+						continue
+						/* CLOSE FILE AFTER PROCESSING */
+					} else {
+						err := utils.ValidateJSON(fileReader)
+						fileReader.Close()
+						if err != nil {
+							response.SkippedCounter++
+							msg := "file " + header.Filename + " skipped: incorrect formatting"
+							response.SkippedFiles = append(response.SkippedFiles, msg)
+							continue
+						} // if 
+						// Execute convert here
+						fileReader, err = header.Open()
+						if err != nil {
+							fmt.Println("Error: cannot open file")
+							response.SkippedCounter++
+							msg := "file " + header.Filename + " skipped: cannot open file"
+							response.SkippedFiles = append(response.SkippedFiles, msg)
+							continue
+						} // if 
+						convertedFile := utils.ConvertToCSV(fileReader)
+						fileReader.Close()
+						continue
+						/* CLOSE FILE AFTER PROCESSING */
+					} // if
 				} else { 
-					/* 
-					ERROR: 
-
-					Within response, include a skipped field that contains strings indicating which files 
-					had the wrong extension -- deal with this later
-					*/
 					response.SkippedCounter++
 					msg := "file " + header.Filename + " skipped: invalid file extension. Must be .csv or .json"
 					response.SkippedFiles = append(response.SkippedFiles, msg)
@@ -78,18 +123,18 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 					*/
 					response.SkippedCounter++
 					msg := "URL " + rawUrl + " skipped: could not parse"
-					response.SkippedFiles := append(response.SkippedFiles, msg)
+					response.SkippedFiles = append(response.SkippedFiles, msg)
 					continue
 				} // if 
-				file_extension := filepath.Ext(parsedUrl.Path)
-				if file_extension == ".csv" || file_extension == ".json" { 
+				fileExtension := filepath.Ext(parsedUrl.Path)
+				if fileExtension == ".csv" || fileExtension == ".json" { 
 					/*
 					VALID: Download then convert
 					*/
 				} else { 
 					response.SkippedCounter++
 					msg := "URL" + parsedUrl + " skipped: unsupported file type"
-					response.SkippedFiles := append(response.SkippedFiles, parsedUrl)
+					response.SkippedFiles = append(response.SkippedFiles, msg)
 					continue
 				} // if 
 				fmt.Fprintln(w, url)
@@ -102,9 +147,10 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	/*
 		Eventually, this will also be populated with the remaining response members
 	*/
-
+	
+	// Encode response and write it to response writer 
 	encodedResponse, err := json.Marshal(response)
-	w.SetHeader("Content-Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write(endcodedResponse)
+	w.Write(encodedResponse)
 } // UploadHandler 
