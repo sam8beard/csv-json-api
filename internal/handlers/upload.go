@@ -73,6 +73,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 							continue
 						} // if 
 						convertedFile := utils.ConvertToJSON(fileReader)
+						_ = convertedFile // REMOVE WHEN CONVERT IS FINISHED
 						fileReader.Close()
 						continue
 						/* CLOSE FILE AFTER PROCESSING */
@@ -95,6 +96,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 							continue
 						} // if 
 						convertedFile := utils.ConvertToCSV(fileReader)
+						_ = convertedFile // REMOVE WHEN CONVERT IS FINISHED 
 						fileReader.Close()
 						continue
 						/* CLOSE FILE AFTER PROCESSING */
