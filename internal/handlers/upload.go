@@ -31,7 +31,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Only POST allowed", http.StatusMethodNotAllowed)
 	} // if 
 
-	// populate Multipart Form to retrieve file and file header 
+	// populate Multipart Form to retrieve file and file header (max 10MB)
 	err := r.ParseMultipartForm(10 << 20)
 	
 	if err != nil { 
@@ -44,20 +44,23 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		if r.MultipartForm.File["files"] != nil { 
 			for _, header := range r.MultipartForm.File["files"] {
 				file_extension := filepath.Ext(header.Filename)
-				if file_extension == ".csv" || file_extension == "json" { 
+				if file_extension == ".csv" || file_extension == "json" {
+					
 					// pass to validate then pass to convert? or
 					// call validate in convert? 
+
 				} else { 
-					response.SkippedCounter ++
+					
 					/* 
 					ERROR: 
 
 					Within response, include a skipped field that contains strings indicating which files 
 					had the wrong extension -- deal with this later
 					*/
-					msg := header.Filename + " has invalid extension. Must be .csv or .json."
-					response.SkippedFiles = append(response.SkippedFiles, msg)
 					response.SkippedCounter++
+					msg := "file " + header.Filename + " skipped: invalid file extension. Must be .csv or .json"
+					response.SkippedFiles = append(response.SkippedFiles, msg)
+					
 
 				}
 				fmt.Fprintf(w, "Size of %s: %v bytes\n", header.Filename, header.Size)
@@ -71,14 +74,14 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	if len(r.MultipartForm.Value) != 0 { 
 		if r.MultipartForm.Value["urls"] != nil { 
 			for _, url := range r.MultipartForm.Value["urls"] { 
-
 				parsedUrl, err := url.Parse(url)
 				if err != nil { 
 					/* 
 					ERROR: Add something to error report, invalid url 
 					*/
 					response.SkippedCounter++
-					response.Skipped
+					msg := "URL " + url + " skipped: could not parse"
+					response.SkippedFiles := append(response.SkippedFiles, msg)
 				} // if 
 				file_extension := filepath.Ext(parsedUrl)
 				if file_extension == ".csv" || file_extension == ".json" { 
@@ -89,7 +92,9 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 					/* 
 					ERROR: Add to report, wrong type of file 
 					*/
-					response.SkippedCounter ++
+					response.SkippedCounter++
+					msg := "URL" + parsedUrl + " skipped: unsupported file type"
+					response.SkippedFiles := append(response.SkippedFiles, parsedUrl)
 
 				} // if 
 				fmt.Fprintln(w, url)
