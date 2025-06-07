@@ -2,8 +2,8 @@ package handlers
 
 import ( 
 	"net/http"
-	"github.com/sam8beard/csv-json-api/utils"
-	// "fmt"
+	// "github.com/sam8beard/csv-json-api/internal/utils"
+	"fmt"
 	// "github.com/go-chi/chi/v5"
 	// "github.com/go-chi/chi/v5/middleware"
 )
@@ -25,10 +25,10 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	if len(r.MultipartForm.File) != 0 {
 		if r.MultipartForm.File["files"] != nil { 
 			for _, header := range r.MultipartForm.File["files"] {
-				fileReader, err := header.Open(); if err != nil { fmt.Println(err)}
-				contents, err := io.ReadAll(fileReader); if err != nil { fmt.Println(err)}
-				_ = fileReader
-				_ = contents 
+				// fileReader, err := header.Open(); if err != nil { fmt.Println(err)}
+				// contents, err := io.ReadAll(fileReader); if err != nil { fmt.Println(err)}
+				// _ = fileReader
+				// _ = contents 
 				fmt.Fprintf(w, "Size of %s: %v bytes\n", header.Filename, header.Size)
 			} // for 
 		} else { 
@@ -41,7 +41,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		if r.MultipartForm.Value["urls"] != nil { 
 			for _, value := range r.MultipartForm.Value["urls"] { 
 				/* Download file here */ 
-				
+
 				/*					 */
 				fmt.Fprintln(w, value)
 			} // for	
