@@ -23,8 +23,8 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unable to parse form", http.StatusBadRequest)
 	} // if 
 
+	validCounter, skippedCounter := 0, 0
 
-	
 	// If file form fields are supplied, iterate through map and process
 	if len(r.MultipartForm.File) != 0 {
 		if r.MultipartForm.File["files"] != nil { 
@@ -36,7 +36,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 					/* 
 					NEED TO HANDLE CASE WHERE USERS UPLOAD FILE THAT IS NOT CSV OR JSON
 
-					In response, include a skipped field that contains strings indicating which files 
+					Within response, include a skipped field that contains strings indicating which files 
 					had the wrong extension -- deal with this later
 					*/
 					msg := header.Filename + " has invalid extension. Must be .csv or .json."
@@ -59,9 +59,8 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 					/* 
 					Add something to error report, invalid url 
 					*/
-				}
+				} // if 
 				file_extension := filepath.Ext(parsedUrl)
-
 				if file_extension == ".csv" || file_extension == ".json" { 
 					/*
 					Download then convert
@@ -70,7 +69,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 					/* 
 					Add to report, wrong type of file 
 					*/
-				}
+				} // if 
 				fmt.Fprintln(w, url)
 			} // for	
 		} else { 
