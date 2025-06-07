@@ -40,6 +40,9 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	if len(r.MultipartForm.Value) != 0 { 
 		if r.MultipartForm.Value["urls"] != nil { 
 			for _, value := range r.MultipartForm.Value["urls"] { 
+				/* Download file here */ 
+				
+				/*					 */
 				fmt.Fprintln(w, value)
 			} // for	
 		} else { 
