@@ -15,7 +15,6 @@ import (
 
 CTRL F TO SEE WHAT NEEDS TO BE CLEANED UP
 
-
 */
 type Response struct { 
 	ZipURL string
