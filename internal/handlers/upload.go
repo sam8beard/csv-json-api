@@ -11,7 +11,12 @@ import (
 	// "github.com/go-chi/chi/v5"
 	// "github.com/go-chi/chi/v5/middleware"
 )
+/* 
 
+CTRL F TO SEE WHAT NEEDS TO BE CLEANED UP
+
+
+*/
 type Response struct { 
 	ZipURL string
 	SkippedFiles []string
@@ -47,7 +52,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 				if fileExtension == ".csv" || fileExtension == ".json" {
 					fileReader, err := header.Open()
 					if err != nil {
-						fmt.Println("Error: cannot open file")
+						fmt.Println("Error: cannot open file") // THIS NEEDS TO CHANGE
 						response.SkippedCounter++
 						msg := "file " + header.Filename + " skipped: cannot open file"
 						response.SkippedFiles = append(response.SkippedFiles, msg)
@@ -66,7 +71,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 						// Execute convert here
 						fileReader, err := header.Open()
 						if err != nil {
-							fmt.Println("Error: cannot open file")
+							fmt.Println("Error: cannot open file") // THIS NEEDS TO CHANGE 
 							response.SkippedCounter++
 							msg := "file " + header.Filename + " skipped: cannot open file"
 							response.SkippedFiles = append(response.SkippedFiles, msg)
@@ -89,7 +94,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 						// Execute convert here
 						fileReader, err = header.Open()
 						if err != nil {
-							fmt.Println("Error: cannot open file")
+							fmt.Println("Error: cannot open file") // THIS NEEDS TO CHANGE
 							response.SkippedCounter++
 							msg := "file " + header.Filename + " skipped: cannot open file"
 							response.SkippedFiles = append(response.SkippedFiles, msg)
@@ -107,9 +112,9 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 					response.SkippedFiles = append(response.SkippedFiles, msg)
 					continue 
 				} // if 
-				fmt.Fprintf(w, "Size of %s: %v bytes\n", header.Filename, header.Size)
 			} // for 
 		} else { 
+			// THIS NEEDS TO CHANGE
 			fmt.Fprintln(w, "For files, please use the field name, 'files'.")
 		}
 	} // if 
@@ -139,16 +144,12 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 					response.SkippedFiles = append(response.SkippedFiles, msg)
 					continue
 				} // if 
-				fmt.Fprintln(w, url)
 			} // for	
 		} else { 
+			// THIS NEEDS TO BE CHANGED 
 			fmt.Fprintln(w, "For urls, please use the field name, 'urls'.")
 		} // if 
 	} // if 
-	
-	/*
-		Eventually, this will also be populated with the remaining response members
-	*/
 	
 	// Encode response and write it to response writer 
 	encodedResponse, err := json.Marshal(response)
