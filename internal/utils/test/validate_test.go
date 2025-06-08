@@ -7,7 +7,29 @@ import (
 )
 
 func TestValidateCSV(t *testing.T) { 
-	t.Log("Not yet implemented")
+	// t.Log("Not yet implemented")
+	invalidFilePath := "../test-files/test1-invalid.csv"
+	invalidReader, err := os.Open(invalidFilePath); if err != nil {fmt.Println("Cannot open file", err)}
+	invalidErr := ValidateCSV(invalidReader)
+	if invalidErr != nil { 
+		t.Log("ValidateCSV: Test 1 passed")
+	} else { 
+		t.Log("ValidateCSV: Test 1 failed")
+	} // if 
+	invalidReader.Close()
+
+	validFilePath := "../test-files/test1-valid.csv"
+	validReader, err := os.Open(validFilePath); if err != nil {fmt.Println("Cannot open file")}
+	validErr := ValidateCSV(validReader)
+	if validErr != nil { 
+		t.Log("ValidateCSV: Test 2 failed")
+		
+	} else { 
+		t.Log("ValidateCSV: Test 2 passed")
+	} // if 
+	validReader.Close()
+	return
+
 } // TestValidateCSV
 
 func TestValidateJSON(t *testing.T) { 
@@ -15,10 +37,10 @@ func TestValidateJSON(t *testing.T) {
 	invalidReader, err := os.Open(invalidFilePath); if err != nil {fmt.Println("Cannot open file")}
 	invalidErr := ValidateJSON(invalidReader) 
 	if invalidErr != nil { 
-		t.Log("Test 1 passed")
+		t.Log("ValidateJSON: Test 1 failed")
 		
 	} else { 
-		t.Log("Test 1 failed")
+		t.Log("ValidateJSON: Test 1 passed")
 	} // if 
 	invalidReader.Close()
 
@@ -26,10 +48,10 @@ func TestValidateJSON(t *testing.T) {
 	validReader, err := os.Open(validFilePath); if err != nil {fmt.Println("Cannot open file")}
 	validErr := ValidateJSON(validReader)
 	if validErr != nil { 
-		t.Log("Test 2 passed")
+		t.Log("ValidateJSON: Test 2 failed")
 		
 	} else { 
-		t.Log("Test 2 failed")
+		t.Log("ValidateJSON: Test 2 passed")
 	} // if 
 	validReader.Close()
 	return
