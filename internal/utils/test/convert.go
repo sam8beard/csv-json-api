@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"encoding/csv"
 	"io"
-	// "golang.org/x/exp/maps"
-	// "golang.org/x/exp/slices"
-	// "errors"
 	"encoding/json"
 	// "os"
 )
@@ -31,8 +28,6 @@ func ConvertToJSON(r io.Reader) ([]byte, error) {
 		data = append(data, entry)
 	} // for 
 	// Testing 
-	fmt.Println("Final data: ", data)
-
 	encodedData, err := json.Marshal(data); if err != nil { funcErr = err } 
 	fmt.Println(string(encodedData))
 	return encodedData, funcErr
