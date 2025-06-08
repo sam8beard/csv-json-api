@@ -4,30 +4,32 @@ import (
 	"io"
 	"encoding/json"
 	"encoding/csv"
-	// "errors"
 	"io/ioutil"
 	"fmt"
 )
+
+/* 
+Conditions to check for csv files: 
+1.	File is parseable (no malformed CSV structure)
+2.	Header exists (optional depending on your rules)
+3.	All rows have same number of columns
+4.	No empty rows / fields
+5.	Required columns exist (e.g., “id”, “name”, etc.)
+6.	Field value formats (e.g., emails, numbers)
+*/
 func ValidateCSV(r io.Reader) error { 
 	// fmt.Println("Testing")
 	csvReader := csv.NewReader(r) 
-	_, err := csvReader.Read(); if err != nil {}
-	// fmt.Println(row)
-
-	/* FOR TESTING [TEMPORARY] */ 
-	if err != nil { 
-		return err
-	} 
+	// Read file header first
+	_, err := csvReader.Read(); if err != nil { return err }
+	// fmt.Println("File header: ", header)
+	for { 
+		_, err := csvReader.Read()
+		if err == io.EOF { break } else if err != nil { return err }
+		// For testing
+		// if err == nil { fmt.Println(row)}
+	}
 	return err
-	/* 
-	Conditions to check for csv files: 
-	1.	File is parseable (no malformed CSV structure)
-	2.	Header exists (optional depending on your rules)
-	3.	All rows have same number of columns
-	4.	No empty rows / fields
-	5.	Required columns exist (e.g., “id”, “name”, etc.)
-	6.	Field value formats (e.g., emails, numbers)
-	*/
 } // ValidateCSV
 
 /*
