@@ -2,11 +2,11 @@ package utils
 
 import ( 
 	"fmt"
-	"os"
+	// "os"
 )
 
 func ConvertToJSON(r io.Reader) ([]byte, error) { 
-
+	
 } // ConvertToJSON
 
 func ConvertToCSV(r io.Reader) ([]byte, error) { 
