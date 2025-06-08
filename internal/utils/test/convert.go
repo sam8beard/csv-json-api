@@ -4,37 +4,38 @@ import (
 	"fmt"
 	"encoding/csv"
 	"io"
+	// "golang.org/x/exp/maps"
+	// "golang.org/x/exp/slices"
 	// "errors"
-	// "encoding/json"
+	"encoding/json"
 	// "os"
 )
 
 func ConvertToJSON(r io.Reader) ([]byte, error) { 
 	csvReader := csv.NewReader(r)
-	
+	var funcErr error
 	// extract header for json object keys
 	keys, err := csvReader.Read(); if err != nil {fmt.Println(err)}
 	fmt.Println(keys)
-	data := make(map[string]string)
-
-	// populate map with keys 
-	for _, key := range keys {
-		data[key] = ""
-	} // for
-
+	data := make([]map[string]string, 0)
+	
 	for { 
 		row, err := csvReader.Read()
 		// check if we've reached the end of the file 
 		if err == io.EOF { break } else if err != nil { fmt.Println(err) }
+		entry := make(map[string]string, 0)
+		// for each field name, create an entry populated with its respective field value 
+		for i:=0; i < len(keys); i++ { 
+			entry[keys[i]] = row[i]
+		} // for 
+		data = append(data, entry)
+	} // for 
+	// Testing 
+	fmt.Println("Final data: ", data)
 
-	}
-	fmt.Println(data)
-	// for { 
-	// 	row, err := csvReader.Read();
-	// 	row := 
-	// }
-	testFile := []byte{}
-	return testFile, nil
+	encodedData, err := json.Marshal(data); if err != nil { funcErr = err } 
+	fmt.Println(string(encodedData))
+	return encodedData, funcErr
 	/*
 	CSV to JSON
 	•	Use csv.NewReader to read headers and rows.
@@ -42,9 +43,6 @@ func ConvertToJSON(r io.Reader) ([]byte, error) {
 	•	Store objects in a slice of map[string]string or map[string]interface{}.
 	•	Encode the slice with json.Marshal.
 	
-	Pitfalls to handle:
-		•	Missing headers
-		•	Uneven field counts (already handled by validation)
 	*/
 } // ConvertToJSON
 
