@@ -36,14 +36,6 @@ func ConvertToJSON(r io.Reader) ([]byte, error) {
 	encodedData, err := json.Marshal(data); if err != nil { funcErr = err } 
 	fmt.Println(string(encodedData))
 	return encodedData, funcErr
-	/*
-	CSV to JSON
-	•	Use csv.NewReader to read headers and rows.
-	•	Treat first row as keys, map each subsequent row as a JSON object.
-	•	Store objects in a slice of map[string]string or map[string]interface{}.
-	•	Encode the slice with json.Marshal.
-	
-	*/
 } // ConvertToJSON
 
 func ConvertToCSV(r io.Reader) ([]byte, error) { 
