@@ -12,8 +12,7 @@ func ConvertToJSON(r io.Reader) ([]byte, error) {
 	csvReader := csv.NewReader(r)
 	var funcErr error
 	// extract header for json object keys
-	keys, err := csvReader.Read(); if err != nil {fmt.Println(err)}
-	fmt.Println(keys)
+	keys, err := csvReader.Read(); if err != nil {funcErr = err}
 	data := make([]map[string]string, 0)
 	
 	for { 
@@ -29,7 +28,6 @@ func ConvertToJSON(r io.Reader) ([]byte, error) {
 	} // for 
 	// Testing 
 	encodedData, err := json.Marshal(data); if err != nil { funcErr = err } 
-	fmt.Println(string(encodedData))
 	return encodedData, funcErr
 } // ConvertToJSON
 
