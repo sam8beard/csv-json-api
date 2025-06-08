@@ -21,7 +21,8 @@ func ValidateCSV(r io.Reader) error {
 	// fmt.Println("Testing")
 	csvReader := csv.NewReader(r) 
 	// Read file header first
-	_, err := csvReader.Read(); if err != nil { return err }
+	header, err := csvReader.Read(); if err != nil { return err }
+	csvReader.FieldsPerRecord = len(header)
 	// fmt.Println("File header: ", header)
 	for { 
 		_, err := csvReader.Read()
