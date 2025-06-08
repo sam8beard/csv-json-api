@@ -1,10 +1,13 @@
 package test
 
 import ( 
-	"fmt"
 	"testing"
 )
 
-func TestConvert(t *testing.T) { 
-	fmt.Println("Placeholder")
-} // TestSomething
+func TestConvertToJSON(t *testing.T) { 
+	t.Log("Not yet implemented")
+} // TestConvertToCSV
+
+func TestConvertToCSV(t *testing.T) { 
+	t.Log("Not yet implemented")
+} // TestConvertToCSV
