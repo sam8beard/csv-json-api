@@ -32,6 +32,12 @@ func ConvertToJSON(r io.Reader) ([]byte, error) {
 } // ConvertToJSON
 
 func ConvertToCSV(r io.Reader) ([]byte, error) { 
+	jsonDecoder := json.NewDecoder(r)
+	var data []map[string]string
+	err := jsonDecoder.Decode(&data); if err != nil { fmt.Println("Testing: ", err) }
+	fmt.Println("This should be printing data: ", data)
+
+
 	return []byte{}, nil
 } // ConvertToCSV
 
