@@ -33,7 +33,6 @@ func TestConvertToJSON(t *testing.T) {
 } // TestConvertToCSV
 
 func TestConvertToCSV(t *testing.T) { 
-	t.Log("Not yet implemented")
 	invalidFilePath := "../test-files/test2-invalid.json"
 	invalidReader, err := os.Open(invalidFilePath); if err != nil {fmt.Println("Cannot open file", err)}
 	invalidData, invalidErr := ConvertToCSV(invalidReader)
