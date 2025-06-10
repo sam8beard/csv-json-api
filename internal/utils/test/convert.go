@@ -83,7 +83,6 @@ func ConvertToCSV(r io.Reader) ([]byte, error) {
 	csvWriter.Flush()
 
 	byteArray := buffer.Bytes()
-	fmt.Println(string(byteArray))
 	
 	return byteArray, funcErr
 } // ConvertToCSV
