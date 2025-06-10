@@ -6,6 +6,7 @@ import (
 	"io"
 	"encoding/json"
 	"slices"
+	"bytes"
 	// "os"
 )
 
@@ -33,14 +34,14 @@ func ConvertToJSON(r io.Reader) ([]byte, error) {
 } // ConvertToJSON
 
 func ConvertToCSV(r io.Reader) ([]byte, error) { 
+	var funcErr error
 	jsonDecoder := json.NewDecoder(r)
 	var data []map[string]interface{}
-
+	
 	// extract json data into map slice 
-	err := jsonDecoder.Decode(&data); if err != nil { fmt.Println("Testing: ", err) }
-	fmt.Println("This should be printing data: ", data)
-	fmt.Println(len(data))
+	err := jsonDecoder.Decode(&data); if err != nil { funcErr = err }
 	header := make([]string, 0)
+	rows := make([][]string, 0)
 	// _ = keys
 	
 	// extract keys
@@ -65,43 +66,26 @@ func ConvertToCSV(r io.Reader) ([]byte, error) {
 				row = append(row, stringVal)
 			} // for 
 		} // for 
-
-		fmt.Println(row)
-		// write to []byte here 
+		rows = append(rows, row)
 	} // for 
-	// find way to write header row at top of file 
 
 	
-	// populate individual rows, iterate through all objects
-	// for _, obj := range data { 
-	// 	row := []string{}
-	// 	// for each key in header, extract 
-	// 	for _, key := range header { 
-	// 		value := obj[key]
-	// 		str, ok := value.(string)
-	// 		if ok { 
-	// 			row = append(row, str)
-	// 		} else { 
-	// 			stringVal := fmt.Sprint(value)
-	// 			// fmt.Printf("Value Type: %T\n", stringVal)
-	// 			row = append(row, stringVal)
-	// 		}
-	// 		// fmt.Printf("%T\n", value)
-	// 		// fmt.Println(row)
-	// 		// row := append(row, value)
-	// 		// fmt.Println(row)
-	// 		_ = row
-	// 	}
-	// 	fmt.Println(row)
-	// }
-	// for i, value := range header { 
-	// 	if 
-	// // }
-	// fmt.Printf("%T\n", data)
-	// fmt.Println(header)
-	
+	// need to use buffer as the writer passed to NewWriter because 
+	// we are not writing directly to a file 
+	var buffer bytes.Buffer
+	csvWriter :=  csv.NewWriter(&buffer)
 
-	return []byte{}, nil
+	// write header using Write() 
+	err = csvWriter.Write(header); if err != nil {funcErr = err}
+	// write rest of rows using WriteAll()
+	err = csvWriter.WriteAll(rows); if err != nil {funcErr = err}
+	
+	csvWriter.Flush()
+
+	byteArray := buffer.Bytes()
+	fmt.Println(string(byteArray))
+	
+	return byteArray, funcErr
 } // ConvertToCSV
 
 /* 
