@@ -39,7 +39,7 @@ func ConvertToCSV(r io.Reader) ([]byte, error) {
 	var data []map[string]interface{}
 	
 	// extract json data into map slice 
-	err := jsonDecoder.Decode(&data); if err != nil { funcErr = err }
+	err := jsonDecoder.Decode(&data); if err != nil { funcErr = err; return nil, funcErr }
 	header := make([]string, 0)
 	rows := make([][]string, 0)
 	// _ = keys
