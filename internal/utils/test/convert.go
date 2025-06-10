@@ -5,6 +5,7 @@ import (
 	"encoding/csv"
 	"io"
 	"encoding/json"
+	"slices"
 	// "os"
 )
 
@@ -33,10 +34,72 @@ func ConvertToJSON(r io.Reader) ([]byte, error) {
 
 func ConvertToCSV(r io.Reader) ([]byte, error) { 
 	jsonDecoder := json.NewDecoder(r)
-	var data []map[string]string
+	var data []map[string]interface{}
+
+	// extract json data into map slice 
 	err := jsonDecoder.Decode(&data); if err != nil { fmt.Println("Testing: ", err) }
 	fmt.Println("This should be printing data: ", data)
+	fmt.Println(len(data))
+	header := make([]string, 0)
+	// _ = keys
+	
+	// extract keys
+	for _, obj := range data { 
+		row := []string{}
 
+		// extract keys
+		for key := range obj { 
+			if !slices.Contains(header, key) { header = append(header, key) }
+		} // for 	
+
+		// for each key in header, extract corresponding value in current
+		// object and append it to a row 
+		for _, key := range header { 
+			value := obj[key]
+			str, ok := value.(string)
+			if ok { 
+				row = append(row, str)
+			} else { 
+				stringVal := fmt.Sprint(value)
+				// fmt.Printf("Value Type: %T\n", stringVal)
+				row = append(row, stringVal)
+			} // for 
+		} // for 
+
+		fmt.Println(row)
+		// write to []byte here 
+	} // for 
+	// find way to write header row at top of file 
+
+	
+	// populate individual rows, iterate through all objects
+	// for _, obj := range data { 
+	// 	row := []string{}
+	// 	// for each key in header, extract 
+	// 	for _, key := range header { 
+	// 		value := obj[key]
+	// 		str, ok := value.(string)
+	// 		if ok { 
+	// 			row = append(row, str)
+	// 		} else { 
+	// 			stringVal := fmt.Sprint(value)
+	// 			// fmt.Printf("Value Type: %T\n", stringVal)
+	// 			row = append(row, stringVal)
+	// 		}
+	// 		// fmt.Printf("%T\n", value)
+	// 		// fmt.Println(row)
+	// 		// row := append(row, value)
+	// 		// fmt.Println(row)
+	// 		_ = row
+	// 	}
+	// 	fmt.Println(row)
+	// }
+	// for i, value := range header { 
+	// 	if 
+	// // }
+	// fmt.Printf("%T\n", data)
+	// fmt.Println(header)
+	
 
 	return []byte{}, nil
 } // ConvertToCSV
