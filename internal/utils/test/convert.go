@@ -42,24 +42,29 @@ func ConvertToCSV(r io.Reader) ([]byte, error) {
 	err := jsonDecoder.Decode(&data); if err != nil { funcErr = err; return nil, funcErr }
 	header := make([]string, 0)
 	rows := make([][]string, 0)
-	// _ = keys
 	
-	// extract keys
+	// extract
 	for _, obj := range data { 
-		row := []string{}
-
-		// extract keys
 		for key := range obj { 
 			if !slices.Contains(header, key) { header = append(header, key) }
 		} // for 	
+	} // for 
 
-		// for each key in header, extract corresponding value in current
-		// object and append it to a row 
+	for _, obj := range data { 
+		row := []string{}
+
 		for _, key := range header { 
 			value := obj[key]
+			// fmt.Printf("%T\n", value)
 			str, ok := value.(string)
+			// if value is a string, add
 			if ok { 
 				row = append(row, str)
+			// if value doesnt exist, add empty string
+			} else if value == nil {
+				nilPlaceholder := ""
+				row = append(row, nilPlaceholder)
+			// if other type, convert to string and add
 			} else { 
 				stringVal := fmt.Sprint(value)
 				// fmt.Printf("Value Type: %T\n", stringVal)
@@ -83,7 +88,7 @@ func ConvertToCSV(r io.Reader) ([]byte, error) {
 	csvWriter.Flush()
 
 	byteArray := buffer.Bytes()
-	
+	fmt.Println(string(byteArray))
 	return byteArray, funcErr
 } // ConvertToCSV
 

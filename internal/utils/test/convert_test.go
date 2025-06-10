@@ -55,5 +55,28 @@ func TestConvertToCSV(t *testing.T) {
 		t.Log("ConvertToCSV: Test 2 passed")
 	} // if 
 	validReader.Close()
+
+	// invalidFilePath := "../test-files/test2-invalid.json"
+	// invalidReader, err := os.Open(invalidFilePath); if err != nil {fmt.Println("Cannot open file", err)}
+	// invalidData, invalidErr := ConvertToCSV(invalidReader)
+	// _ = invalidData
+	// if invalidErr != nil { 
+	// 	t.Log("ConvertToCSV: Test 1 passed")
+	// } else { 
+	// 	t.Log("ConvertToCSV: Test 1 failed")
+	// } // if 
+	// invalidReader.Close()
+
+	validFilePath2 := "../test-files/test3-valid.json"
+	validReader2, err := os.Open(validFilePath2); if err != nil {fmt.Println("Cannot open file", err)}
+	validData2, validErr2 := ConvertToCSV(validReader2)
+	_ = validData2
+	if validErr2 != nil { 
+		t.Log("ConvertToCSV: Test 3 failed")
+		
+	} else { 
+		t.Log("ConvertToCSV: Test 3 passed")
+	} // if 
+	validReader2.Close()
 	return
 } // TestConvertToCSV
