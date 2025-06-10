@@ -5,9 +5,7 @@ import (
 	"encoding/csv"
 	"io"
 	"encoding/json"
-	"slices"
 	"bytes"
-	// "os"
 )
 
 func ConvertToJSON(r io.Reader) ([]byte, error) { 
@@ -44,9 +42,13 @@ func ConvertToCSV(r io.Reader) ([]byte, error) {
 	rows := make([][]string, 0)
 	
 	// extract
+	seen := make(map[string]bool)
 	for _, obj := range data { 
 		for key := range obj { 
-			if !slices.Contains(header, key) { header = append(header, key) }
+			if !seen[key] { 
+				seen[key] = true
+				header = append(header, key)
+			} // if 
 		} // for 	
 	} // for 
 
