@@ -29,6 +29,19 @@ func TestConvertToJSON(t *testing.T) {
 		t.Log("ConvertToJSON: Test 2 passed")
 	} // if 
 	validReader.Close()
+
+	validFilePath2 := "../test-files/test4-valid.csv"
+	validReader2, err := os.Open(validFilePath2); if err != nil {fmt.Println("Cannot open file", err)}
+	validData2, validErr2 := ConvertToJSON(validReader2)
+	_ = validData2
+	if validErr2 != nil { 
+		t.Log("ConvertToJSON: Test 3 failed")
+		
+	} else { 
+		t.Log("ConvertToJSON: Test 3 passed")
+	} // if 
+	validReader2.Close()
+
 	return
 } // TestConvertToCSV
 

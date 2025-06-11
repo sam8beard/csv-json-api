@@ -28,6 +28,7 @@ func ConvertToJSON(r io.Reader) ([]byte, error) {
 	} // for 
 	// Testing 
 	encodedData, err := json.Marshal(data); if err != nil { funcErr = err } 
+	fmt.Println(string(encodedData))
 	return encodedData, funcErr
 } // ConvertToJSON
 
