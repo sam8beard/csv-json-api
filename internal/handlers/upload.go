@@ -35,7 +35,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" { 
 		http.Error(w, "Only POST allowed", http.StatusMethodNotAllowed)
 	} // if 
-
+	
 	// populate Multipart Form to retrieve file and file header (max 10MB)
 	err := r.ParseMultipartForm(10 << 20)
 	
@@ -49,21 +49,23 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 			for _, header := range r.MultipartForm.File["files"] {
 				fileExtension := filepath.Ext(header.Filename)
 				if fileExtension == ".csv" || fileExtension == ".json" {
+
+					// attempt to open file, log if unable 
 					fileReader, err := header.Open()
 					if err != nil {
-						fmt.Println("Error: cannot open file") // THIS NEEDS TO CHANGE
 						response.SkippedCounter++
 						msg := "file " + header.Filename + " skipped: cannot open file"
 						response.SkippedFiles = append(response.SkippedFiles, msg)
 						continue
 					} // if 
 					
+					// if file is a csv file
 					if fileExtension == ".csv" {
 						err := utils.ValidateCSV(fileReader)
 						fileReader.Close()
 						if err != nil {
 							response.SkippedCounter++
-							msg := "file " + header.Filename + " skipped: invalid formatting"
+							msg := "file " + header.Filename + " skipped: invalid/unsupported formatting"
 							response.SkippedFiles = append(response.SkippedFiles, msg)
 							continue
 						} // if 
