@@ -63,7 +63,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 						fileReader.Close()
 						if err != nil {
 							response.SkippedCounter++
-							msg := "file " + header.Filename + " skipped: incorrect formatting"
+							msg := "file " + header.Filename + " skipped: invalid formatting"
 							response.SkippedFiles = append(response.SkippedFiles, msg)
 							continue
 						} // if 

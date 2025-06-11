@@ -1,11 +1,11 @@
 package test
 
 import ( 
-	"fmt"
+	// "fmt"
 	// "os"
 	"net/http"
 	"errors"
-	// "strings"
+	"strings"
 	"net/url"
 	"io"
 )
@@ -42,15 +42,35 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 	// check content type 
 	contentType := response.Header.Get("Content-Type")
 	if strings.Contains(contentType, "application/json") { 
-		// validate json 
+
+		// open reader 
+		jsonReader := response.Body
+
+		// pass reader to validate function
+		err := ValidateJSON(jsonReader)
+		if err != nil { 
+			funcErr = errors.New("URL " + parsedURLString " skipped: invalid formatting")
+			return nil, funcErr
+		} // if 
+		
 	} else if (strings.Contains(contentType, "text/plain")) || 
 	(strings.Contains(contentType, "text/csv")) || 
 	(strings.Contains(contentType, "application/csv")) { 
-		// validate csv 
+
+		// open reader 
+		csvReader := response.Body
+		
+		// pass reader to validate function
+		err := ValidateCSV(csvReader)
+		if err != nil { 
+			funcErr = errors.New("URL " + parsedURLString " skipped: invalid formatting")
+			return nil, funcErr
+		} // if 
+
 	} else { 
-		funcErr = errors.New("URL" + parsedURLString + " skipped: unsupported file type")
+		funcErr = errors.New("URL " + parsedURLString + " skipped: unsupported file type")
 		return nil, funcErr
-	}
+	} // if 
 	
 	
 	
