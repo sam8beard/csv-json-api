@@ -12,7 +12,7 @@ func DownloadFile(url string) (io.ReadCloser, error) {
 	var funcErr error 
 	response, err := http.Get(url)
 	if err != nil { 
-		 funcErr = errors.New("URL" + url + "skipped: file does not exist at specified location")
+		 funcErr = errors.New("URL " + url + " skipped: file does not exist at specified location")
 		 return nil, funcErr
 	} // if 
 
@@ -22,10 +22,10 @@ func DownloadFile(url string) (io.ReadCloser, error) {
 	contents, err := io.ReadAll(response.Body)
 	_ = err
 	fmt.Printf("%T\n", contents)
-
-
-	// Return response.Body (this is the Reader for the file)
+	// fmt.Println(string(contents))
 	
+	// Return response.Body (this is the Reader for the file)
+
 	/* 
 	Return error if file location does not exist 
 
@@ -37,5 +37,5 @@ func DownloadFile(url string) (io.ReadCloser, error) {
 	Ex: "URL [file url] skipped: file does not exist at specified location"
 	*/ 
 
-	return nil, funcErr
+	return response.Body, funcErr
 } // DownloadFile
