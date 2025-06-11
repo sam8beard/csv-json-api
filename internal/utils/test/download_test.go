@@ -13,7 +13,6 @@ func TestDownloadFile(t *testing.T) {
 	_ = err
 	url_string := parsedUrl.String()
 	fileReader, err := DownloadFile(url_string)
-	fmt.Println(err)
 	_ = fileReader
-
+	fmt.Println("TestDownloadFile")
 } // TestDownloadFile

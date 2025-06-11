@@ -5,7 +5,8 @@ import (
 	// "os"
 	"net/http"
 	"errors"
-	"strings"
+	// "strings"
+	"net/url"
 	"io"
 )
 
@@ -20,26 +21,47 @@ Cases to account for:
 	2. Call Validate[File Type] function 
 
 */ 
-func DownloadFile(url string) (io.ReadCloser, error) { 
+func DownloadFile(rawURL string) (io.ReadCloser, error) { 
 	var funcErr error 
-	response, err := http.Get(url)
-
-	// file not found at url given
+	
+	// parse URL and check error
+	parsedURL, err := url.Parse(rawURL)
 	if err != nil { 
-		 funcErr = errors.New("URL " + url + " skipped: file does not exist at specified location")
+		funcErr = errors.New("URL " + rawURL+ " skipped: could not parse")
+		return nil, funcErr
+	} // if 
+
+	// check if file exist at url
+	parsedURLString := parsedURL.String()
+	response, err := http.Get(parsedURLString)
+	if err != nil { 
+		 funcErr = errors.New("URL " + parsedURLString + " skipped: file does not exist at specified location")
 		 return nil, funcErr
 	} // if 
-	
-	// parse URL and check error, return correct response 
 
+	// check content type 
+	contentType := response.Header.Get("Content-Type")
+	if strings.Contains(contentType, "application/json") { 
+		// validate json 
+	} else if (strings.Contains(contentType, "text/plain")) || 
+	(strings.Contains(contentType, "text/csv")) || 
+	(strings.Contains(contentType, "application/csv")) { 
+		// validate csv 
+	} else { 
+		funcErr = errors.New("URL" + parsedURLString + " skipped: unsupported file type")
+		return nil, funcErr
+	}
+	
+	
+	
 	// check content-type, if passes -> call validate
 	// if validate doesnt return error -> we are OK to convert 
-	
+
 	// Validate file formatting 
-	contentType := response.Header.Get("Content-Type")
-	fmt.Println(contentType)
 	
-	if contentType strings.Contains("application/json")
+	// fmt.Println(contentType)
+	
+	// if contentType strings.Contains("application/json")
 
 	// if (filePath.Ext(url) == ".csv") { 
 	// 	fmt.Println("This is a csv file")
