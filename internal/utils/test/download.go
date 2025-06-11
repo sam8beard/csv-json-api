@@ -5,6 +5,7 @@ import (
 	// "os"
 	"net/http"
 	"errors"
+	"strings"
 	"io"
 )
 
@@ -15,14 +16,25 @@ func DownloadFile(url string) (io.ReadCloser, error) {
 		 funcErr = errors.New("URL " + url + " skipped: file does not exist at specified location")
 		 return nil, funcErr
 	} // if 
+	
+	// Validate file formatting 
+	contentType := response.Header.Get("Content-Type")
+	fmt.Println(contentType)
 
-	fmt.Printf("%T\n", response)
-	fmt.Printf("%T\n", response.Body)
+	if contentType strings.Contains("application/json")
 
-	contents, err := io.ReadAll(response.Body)
-	_ = err
-	fmt.Printf("%T\n", contents)
-	// fmt.Println(string(contents))
+	// if (filePath.Ext(url) == ".csv") { 
+	// 	fmt.Println("This is a csv file")
+	// } else { 
+	// 	fmt.Println("This is a json file")
+	// }
+	// fmt.Printf("%T\n", response)
+	// fmt.Printf("%T\n", response.Body)
+
+	// contents, err := io.ReadAll(response.Body)
+	// _ = err
+	// fmt.Printf("%T\n", contents)
+	// // fmt.Println(string(contents))
 	
 	// Return response.Body (this is the Reader for the file)
 
@@ -36,6 +48,6 @@ func DownloadFile(url string) (io.ReadCloser, error) {
 	Should return error statement in the same format as that in upload 
 	Ex: "URL [file url] skipped: file does not exist at specified location"
 	*/ 
-
+	
 	return response.Body, funcErr
 } // DownloadFile

@@ -20,8 +20,8 @@ type Response struct {
 	ZipURL string
 	SkippedFiles []string
 	ConvertedFiles []string
-	SkippedCounter int 
-	ConvertedCounter int 
+	SkippedCounter int
+	ConvertedCounter int
 } // Response 
 
 func UploadHandler(w http.ResponseWriter, r *http.Request) { 
@@ -80,7 +80,6 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 						_ = convertedFile // REMOVE WHEN CONVERT IS FINISHED
 						fileReader.Close()
 						continue
-						/* CLOSE FILE AFTER PROCESSING */
 					} else {
 						err := utils.ValidateJSON(fileReader)
 						fileReader.Close()
@@ -122,20 +121,31 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	if len(r.MultipartForm.Value) != 0 { 
 		if r.MultipartForm.Value["urls"] != nil { 
 			for _, rawUrl := range r.MultipartForm.Value["urls"] { 
+
+				// add this case to download.go
 				parsedUrl, err := url.Parse(rawUrl)
 				if err != nil { 
-					/* 
-					ERROR: Add something to error report, invalid url 
-					*/
 					response.SkippedCounter++
 					msg := "URL " + rawUrl + " skipped: could not parse"
 					response.SkippedFiles = append(response.SkippedFiles, msg)
 					continue
 				} // if 
 				fileExtension := filepath.Ext(parsedUrl.Path)
+
+				// add this case to download go (will need to be modified because of csv files returning text/plain sometimes)
+				// text/plain might not be csv, but thats okay -> we can call ValidateCSV on the reader returned 
 				if fileExtension == ".csv" || fileExtension == ".json" { 
 					/*
 					VALID: Download then convert
+					*/
+					// Still need to validate whether or not 
+					// content of files are correctly formatted 
+					
+
+					/* 
+					1. Download file
+					2. Validate file 
+					3. Convert file 
 					*/
 				} else { 
 					response.SkippedCounter++

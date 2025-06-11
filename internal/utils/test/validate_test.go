@@ -49,7 +49,6 @@ func TestValidateJSON(t *testing.T) {
 	validErr := ValidateJSON(validReader)
 	if validErr != nil { 
 		t.Log("ValidateJSON: Test 2 failed")
-		
 	} else { 
 		t.Log("ValidateJSON: Test 2 passed")
 	} // if 
