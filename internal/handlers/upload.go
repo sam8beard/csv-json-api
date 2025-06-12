@@ -165,10 +165,9 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	// If non-file form fields are supplied, iterate through map and process
 	if len(r.MultipartForm.Value) != 0 { 
 		if r.MultipartForm.Value["urls"] != nil { 
-			for _, rawUrl := range r.MultipartForm.Value["urls"] { 
+			for _, rawURL := range r.MultipartForm.Value["urls"] { 
 
-				// // add this case to download.go
-				// parsedUrl, err := url.Parse(rawUrl)
+				
 				// if err != nil { 
 				// 	response.SkippedCounter++
 				// 	msg := "URL " + rawUrl + " skipped: could not parse"
@@ -177,7 +176,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 				// } // if 
 
 				/* 
-				
+
 				Need to find a way to detect what kind of file reader is returned by 
 				DownloadFile(). 
 
@@ -190,6 +189,25 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 				*/
 
+				// attemp to download file, if not, return custom error message 
+				fileReader, err := DownloadFile(rawURL)
+				if err != nil { 
+					response.SkippedCounter++ 
+					response.SkippedFiles = append(response.SkippedFiles, err.Error())
+					continue
+				} // if 
+
+				// check file type for conversion, if not csv, then must be json
+				err := ValidateCSV(fileReader)
+				if err != nil {
+					// convert json file to csv
+					fileContents, err := ConvertToCSV(fileReader)
+					_ = err // this error doesn't need to be dealt with
+				} else { 
+					// convert csv file to json 
+					fileContents, err := ConvertToJSON(fileReader)
+					_ = err // this error doesn't need to be dealt with
+				} // if 
 				// fileExtension := filepath.Ext(parsedUrl.Path)
 
 				// add this case to download go (will need to be modified because of csv files returning text/plain sometimes)
