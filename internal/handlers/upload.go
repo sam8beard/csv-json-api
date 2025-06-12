@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"net/url"
 	"encoding/json" // for constructing response 
+	"errors"
 	// "github.com/go-chi/chi/v5"
 	// "github.com/go-chi/chi/v5/middleware"
 )
@@ -33,14 +34,14 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	response.ConvertedCounter = 0
 
 	if r.Method != "POST" { 
-		http.Error(w, "Only POST allowed", http.StatusMethodNotAllowed)
+		http.Error(w, "Only POST allowed ", http.StatusMethodNotAllowed)
 	} // if 
 	
 	// populate Multipart Form to retrieve file and file header (max 10MB)
 	err := r.ParseMultipartForm(10 << 20)
 	
 	if err != nil { 
-		http.Error(w, "Unable to parse form", http.StatusBadRequest)
+		http.Error(w, "Unable to parse form ", http.StatusBadRequest)
 	} // if 
 
 	// If file form fields are supplied, iterate through map and process
@@ -48,6 +49,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		if r.MultipartForm.File["files"] != nil { 
 			for _, header := range r.MultipartForm.File["files"] {
 				fileExtension := filepath.Ext(header.Filename)
+				// check file extension
 				if fileExtension == ".csv" || fileExtension == ".json" {
 
 					// attempt to open file, log if unable 
@@ -56,51 +58,92 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 						response.SkippedCounter++
 						msg := "file " + header.Filename + " skipped: cannot open file"
 						response.SkippedFiles = append(response.SkippedFiles, msg)
+						// process next file
 						continue
 					} // if 
 					
 					// if file is a csv file
 					if fileExtension == ".csv" {
+
+						// attempt to validate file
 						err := utils.ValidateCSV(fileReader)
 						fileReader.Close()
+
+						// could not validate formatting of file
 						if err != nil {
 							response.SkippedCounter++
-							msg := "file " + header.Filename + " skipped: invalid/unsupported formatting"
+							msg := "file " + header.Filename + " skipped: invalid or unsupported formatting"
 							response.SkippedFiles = append(response.SkippedFiles, msg)
+							// process next file 
 							continue
 						} // if 
-						// Execute convert here
+						
+						// attempt to open file 
 						fileReader, err := header.Open()
+
+						// could not open file
 						if err != nil {
-							fmt.Println("Error: cannot open file") // THIS NEEDS TO CHANGE 
 							response.SkippedCounter++
 							msg := "file " + header.Filename + " skipped: cannot open file"
 							response.SkippedFiles = append(response.SkippedFiles, msg)
+							// process next file
 							continue
 						} // if 
-						convertedFile := utils.ConvertToJSON(fileReader)
+
+						// attempt to convert file
+						convertedFile, err := utils.ConvertToJSON(fileReader)
+
+						// could not convert file
+						if err != nil { 
+							response.SkippedCounter++
+							msg := errors.New("file " + header.Filename + " skipped: could not convert")
+							response.SkippedFiles = append(response.SkippedFiles, msg)
+							// process next file
+							continue
+						} // if 
 						_ = convertedFile // REMOVE WHEN CONVERT IS FINISHED
 						fileReader.Close()
-						continue
+						continue // NOT SURE IF I NEED THIS? 
+						
+					// if file is a json file
 					} else {
+
+						// attempt to validate file 
 						err := utils.ValidateJSON(fileReader)
 						fileReader.Close()
+
+						// could not validate formatting of file 
 						if err != nil {
 							response.SkippedCounter++
-							msg := "file " + header.Filename + " skipped: incorrect formatting"
+							msg := "file " + header.Filename + " skipped: invalid or unsupported formatting"
 							response.SkippedFiles = append(response.SkippedFiles, msg)
+							// process next file 
 							continue
 						} // if 
-						// Execute convert here
+
+						// attempt to open file 
 						fileReader, err = header.Open()
+
+						// could not open file 
 						if err != nil {
-							fmt.Println("Error: cannot open file") // THIS NEEDS TO CHANGE
 							response.SkippedCounter++
 							msg := "file " + header.Filename + " skipped: cannot open file"
 							response.SkippedFiles = append(response.SkippedFiles, msg)
+							// process next file
 							continue
 						} // if 
-						convertedFile := utils.ConvertToCSV(fileReader)
+
+						// attempt to convert file 
+						convertedFile, err := utils.ConvertToCSV(fileReader)
+
+						// could not convert file
+						if err != nil { 
+							response.SkippedCounter++
+							msg := errors.New("file " + header.Filename + " skipped: could not convert")
+							response.SkippedFiles = append(response.SkippedFiles, msg)
+							// process next file
+							continue
+						}
 						_ = convertedFile // REMOVE WHEN CONVERT IS FINISHED 
 						fileReader.Close()
 						continue
@@ -108,7 +151,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 					} // if
 				} else { 
 					response.SkippedCounter++
-					msg := "file " + header.Filename + " skipped: invalid file extension. Must be .csv or .json"
+					msg := "file " + header.Filename + " skipped: unsupported file type"
 					response.SkippedFiles = append(response.SkippedFiles, msg)
 					continue 
 				} // if 
@@ -116,7 +159,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		} else { 
 			// THIS NEEDS TO CHANGE
 			fmt.Fprintln(w, "For files, please use the field name, 'files'.")
-		}
+		} // if
 	} // if 
 	
 	// If non-file form fields are supplied, iterate through map and process
@@ -124,37 +167,53 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		if r.MultipartForm.Value["urls"] != nil { 
 			for _, rawUrl := range r.MultipartForm.Value["urls"] { 
 
-				// add this case to download.go
-				parsedUrl, err := url.Parse(rawUrl)
-				if err != nil { 
-					response.SkippedCounter++
-					msg := "URL " + rawUrl + " skipped: could not parse"
-					response.SkippedFiles = append(response.SkippedFiles, msg)
-					continue
-				} // if 
-				fileExtension := filepath.Ext(parsedUrl.Path)
+				// // add this case to download.go
+				// parsedUrl, err := url.Parse(rawUrl)
+				// if err != nil { 
+				// 	response.SkippedCounter++
+				// 	msg := "URL " + rawUrl + " skipped: could not parse"
+				// 	response.SkippedFiles = append(response.SkippedFiles, msg)
+				// 	continue
+				// } // if 
+
+				/* 
+				
+				Need to find a way to detect what kind of file reader is returned by 
+				DownloadFile(). 
+
+				This needed to decide which convert function to call
+
+				I think we can just call both validate functions again 
+				to see which file type it is
+
+				Each validate function should return an error if incorrect file type is supplied?
+
+				*/
+
+				// fileExtension := filepath.Ext(parsedUrl.Path)
 
 				// add this case to download go (will need to be modified because of csv files returning text/plain sometimes)
 				// text/plain might not be csv, but thats okay -> we can call ValidateCSV on the reader returned 
-				if fileExtension == ".csv" || fileExtension == ".json" { 
-					/*
-					VALID: Download then convert
-					*/
-					// Still need to validate whether or not 
-					// content of files are correctly formatted 
+
+				// if fileExtension == ".csv" || fileExtension == ".json" { 
+				// 	/*
+				// 	VALID: Download then convert
+				// 	*/
+				// 	// Still need to validate whether or not 
+				// 	// content of files are correctly formatted 
 					
 
-					/* 
-					1. Download file
-					2. Validate file 
-					3. Convert file 
-					*/
-				} else { 
-					response.SkippedCounter++
-					msg := "URL" + parsedUrl + " skipped: unsupported file type"
-					response.SkippedFiles = append(response.SkippedFiles, msg)
-					continue
-				} // if 
+				// 	/* 
+				// 	1. Download file
+				// 	2. Validate file 
+				// 	3. Convert file 
+				// 	*/
+				// } else { 
+				// 	response.SkippedCounter++
+				// 	msg := "URL " + parsedUrl + " skipped: unsupported file type"
+				// 	response.SkippedFiles = append(response.SkippedFiles, msg)
+				// 	continue
+				// } // if 
 			} // for	
 		} else { 
 			// THIS NEEDS TO BE CHANGED 

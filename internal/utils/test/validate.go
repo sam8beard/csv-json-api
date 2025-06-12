@@ -17,13 +17,13 @@ Conditions to check for csv files:
 5.	Required columns exist (e.g., “id”, “name”, etc.)
 6.	Field value formats (e.g., emails, numbers)
 */
-func ValidateCSV(r io.Reader) error { 
+func ValidateCSV(r io.ReadCloser) error { 
 	// fmt.Println("Testing")
 	csvReader := csv.NewReader(r) 
 	// Read file header first
 	header, err := csvReader.Read(); if err != nil { return err }
 	csvReader.FieldsPerRecord = len(header)
-	// fmt.Println("File header: ", header)
+	// fmt.Println("File header: ", header)		
 	for { 
 		_, err := csvReader.Read()
 		if err == io.EOF { break } else if err != nil { return err }
@@ -41,7 +41,7 @@ but I'm instantiating my own function for my sanity.
 I'm just wrapping the call to json.Validate in this function 
 and returning an error instead of bool.
 */
-func ValidateJSON(r io.Reader) error {
+func ValidateJSON(r io.ReadCloser) error {
 	fileContents, readErr := ioutil.ReadAll(r)
 	if readErr != nil {fmt.Println(readErr)}
 	var err error

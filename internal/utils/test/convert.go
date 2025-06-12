@@ -8,7 +8,7 @@ import (
 	"bytes"
 )
 
-func ConvertToJSON(r io.Reader) ([]byte, error) { 
+func ConvertToJSON(r io.ReadCloser) ([]byte, error) { 
 	csvReader := csv.NewReader(r)
 	var funcErr error
 	// extract header for json object keys
@@ -32,7 +32,7 @@ func ConvertToJSON(r io.Reader) ([]byte, error) {
 	return encodedData, funcErr
 } // ConvertToJSON
 
-func ConvertToCSV(r io.Reader) ([]byte, error) { 
+func ConvertToCSV(r io.ReadCloser) ([]byte, error) { 
 	var funcErr error
 	jsonDecoder := json.NewDecoder(r)
 	var data []map[string]interface{}

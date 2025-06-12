@@ -1,13 +1,15 @@
 package test
 
 import ( 
-	// "fmt"
+	"fmt"
 	// "os"
 	"net/http"
 	"errors"
 	"strings"
 	"net/url"
 	"io"
+	"path/filepath"
+	
 )
 
 /* 
@@ -30,12 +32,32 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 		funcErr = errors.New("URL " + rawURL+ " skipped: could not parse")
 		return nil, funcErr
 	} // if 
-
+	
 	// check if file exist at url
 	parsedURLString := parsedURL.String()
+
+	fileExtension := filepath.Ext(parsedURLString)
+
+	// fmt.Printf("%T\n", parsedURLString)
+	// fmt.Println(parsedURLString)
+	// fmt.Println("File extension: " + fileExtension)
+	// fmt.Println("Hello")
+
+	// if url contains an extension of some sort and that extension is not .csv or .json,
+	// return an error 
+	if strings.Contains(fileExtension, ".") {
+		fmt.Println("This should be printing")
+		if fileExtension != ".csv" && fileExtension != ".json" { 
+			funcErr = errors.New("URL " + parsedURLString + " skipped: invalid URL type")
+			return nil, funcErr
+		} // if 
+	} // if 
+
+	// attempt to retrieve file, if error, log
 	response, err := http.Get(parsedURLString)
-	if err != nil { 
+	if err != nil || response.StatusCode != 200  { 
 		 funcErr = errors.New("URL " + parsedURLString + " skipped: file does not exist at specified location")
+		 fmt.Println(response.Body)
 		 return nil, funcErr
 	} // if 
 
@@ -49,7 +71,7 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 		// pass reader to validate function
 		err := ValidateJSON(jsonReader)
 		if err != nil { 
-			funcErr = errors.New("URL " + parsedURLString " skipped: invalid formatting")
+			funcErr = errors.New("URL " + parsedURLString + " skipped: invalid or unsupported formatting")
 			return nil, funcErr
 		} // if 
 		
@@ -63,7 +85,7 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 		// pass reader to validate function
 		err := ValidateCSV(csvReader)
 		if err != nil { 
-			funcErr = errors.New("URL " + parsedURLString " skipped: invalid formatting")
+			funcErr = errors.New("URL " + parsedURLString  + " skipped: invalid or unsupported formatting")
 			return nil, funcErr
 		} // if 
 
