@@ -213,6 +213,9 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 					// WRITE CONVERTED FILE TO ZIP USING ZIPWRITER
 
+
+					// need to find a way to truncate/transform url of successfully downloaded 
+					// file to a file name we can use in the zip file/converted files slice
 				} // if 
 			} // for	
 		} else { 
