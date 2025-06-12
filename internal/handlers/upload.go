@@ -203,35 +203,17 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 					// convert json file to csv
 					fileContents, err := ConvertToCSV(fileReader)
 					_ = err // this error doesn't need to be dealt with
+
+					// WRITE CONVERTED FILE TO ZIP USING ZIPWRITER
+
 				} else { 
 					// convert csv file to json 
 					fileContents, err := ConvertToJSON(fileReader)
 					_ = err // this error doesn't need to be dealt with
+
+					// WRITE CONVERTED FILE TO ZIP USING ZIPWRITER
+
 				} // if 
-				// fileExtension := filepath.Ext(parsedUrl.Path)
-
-				// add this case to download go (will need to be modified because of csv files returning text/plain sometimes)
-				// text/plain might not be csv, but thats okay -> we can call ValidateCSV on the reader returned 
-
-				// if fileExtension == ".csv" || fileExtension == ".json" { 
-				// 	/*
-				// 	VALID: Download then convert
-				// 	*/
-				// 	// Still need to validate whether or not 
-				// 	// content of files are correctly formatted 
-					
-
-				// 	/* 
-				// 	1. Download file
-				// 	2. Validate file 
-				// 	3. Convert file 
-				// 	*/
-				// } else { 
-				// 	response.SkippedCounter++
-				// 	msg := "URL " + parsedUrl + " skipped: unsupported file type"
-				// 	response.SkippedFiles = append(response.SkippedFiles, msg)
-				// 	continue
-				// } // if 
 			} // for	
 		} else { 
 			// THIS NEEDS TO BE CHANGED 
