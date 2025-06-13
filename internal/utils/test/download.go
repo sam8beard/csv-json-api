@@ -67,22 +67,31 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 		 	return nil, funcErr
 		} // if 
 		
-		// consume stream and load content 
+		// consume stream and load content for use in testing readers 
 		data, err := io.ReadAll(response.Body)
 		if err != nill { 
 			funcErr = errors.New("URL " + parsedURLString + " skipped: issue reading content of response body")
 			return nil, funcErr
 		} // if 
 		response.Body.Close()
-
-		// create reader for validation 
-		validationReader, err := bytes.NewReader(data)
 		
 		// reader that will be returned 
 		finalReader, err := bytes.NewReader(data)
 
+		// reader for format validation 
+		validationReader, err := bytes.NewReader(data)
 		
-	} else { 
+		// if response body contents is compressed, decompress it
+		if isGzip(data) { 
+			// wrap reader in gzip reader 
+			tempReader, err := bytes.NewReader(data)
+			_ = err // MIGHT HAVE TO DEAL WITH THIS
+			gzipReader, err := gzip.NewReader(tempReader) 
+			if err != nil { 
+				fmt.Println("detected as gzip file, but is not gzip file. REVIEW")
+			} // if 
+		} // if 
+		
 		
 		/* 
 
@@ -96,7 +105,11 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 
 
 		*/
-
+		
+		
+	} else { 
+		
+		
 
 
 		// check content type 
@@ -139,3 +152,7 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 	
 	return response.Body, funcErr
 } // DownloadFile
+
+func isGzip(data []byte) bool { 
+	return len(data) > 2 && data[0] == 0x1F && data[1] == 0x8B
+} // isGzip
