@@ -25,7 +25,7 @@ Cases to account for:
 */ 
 func DownloadFile(rawURL string) (io.ReadCloser, error) { 
 	var funcErr error 
-	
+
 	// parse URL and check error
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil { 
@@ -51,7 +51,9 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 	// judgement until content inspection. 
 	// api endpoints supplied should be supported if they return .csv or .json content
 
-	// THIS CONDITION IS NOT NEEDED - REMOVE
+	// THIS CONDITION IS NOT NEEDED - REMOVE!!!!
+	// We can remove because: by the time the execution gets here, we know the 
+	// url is either an api endpoint, a json file, or a csv file 
 	if fileExtension == "" || fileExtension == ".json" || fileExtension == ".csv" { 
 
 		// attempt to retrieve file, if error, log
@@ -78,9 +80,18 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 
 		// // reader for format validation 
 		// validationReader, err := bytes.NewReader(data)
-		
-		// if response body contents is compressed, decompress, validate, and return
+		// var finalReader io.ReadCloser
+		// var validateCSVReader io.ReadCloser
+		// var validateJSONReader io.ReadCloser
+
+		// // if initialized we know the file was compressed, a gzip reader will be returned
+		// var gzipReader gzip.Reader
+
+		// if response body contents is compressed - decompress, validate, and return
 		if isGzip(data) { 
+			tempReader := bytes.NewReader(data)
+			gzipReader := gzip.NewReader(tempReader)
+		
 			// temp reader for validationCSV reader
 			tempReader1, err := bytes.NewReader(data)
 			_ = err // MIGHT HAVE TO DEAL WITH THIS
@@ -105,14 +116,24 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 			_ = err // same as above
 			
 
-			// validate file, if not 
-			csvErr:= ValidateCSV(validationReaderCSV)
+			// validate file, at least one of these will be nil
+			// if both are nill, return error 
+			
+			csvErr := ValidateCSV(validationReaderCSV)
 			jsonErr := ValidateJSON(validationReaderJSON)
 
-			
+			// file was of type .csv, but formatting was invalid 
+			if fileExtension == ".csv" && csvErr != nil { 
+				
+			// file was of type json, but formatting was invalid 
+			} else if fileExtension == ".json" && jsonErr != nil { 
+				
+			// file returned by endpoint was neither json or csv 
+			} else if fileExtension == "" && jsonErr != nil && csvErr != nill { 
+				
+			} // if 
 
 			
-
 			
 		// response is not compressed - validate and return 
 		} else { 
