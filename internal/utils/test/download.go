@@ -67,7 +67,7 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 
 		// open reader 
 		jsonReader := response.Body
-
+		fmt.Printf("%T\n", jsonReader)
 		// pass reader to validate function
 		err := ValidateJSON(jsonReader)
 		if err != nil { 

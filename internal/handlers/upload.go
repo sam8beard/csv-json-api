@@ -206,6 +206,9 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 					// WRITE CONVERTED FILE TO ZIP USING ZIPWRITER
 
+					// need to find a way to truncate/transform url of successfully downloaded 
+					// file to a file name we can use in the zip file/converted files slice
+
 				} else { 
 					// convert csv file to json 
 					fileContents, err := ConvertToJSON(fileReader)
@@ -216,6 +219,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 					// need to find a way to truncate/transform url of successfully downloaded 
 					// file to a file name we can use in the zip file/converted files slice
+
 				} // if 
 			} // for	
 		} else { 
