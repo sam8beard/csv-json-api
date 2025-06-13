@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"io"
 	"path/filepath"
+	"bytes"
 )
 
 /* 
@@ -47,18 +48,57 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 		} // if 
 	} // if 
 
-	// attempt to retrieve file, if error, log
-	response, err := http.Get(parsedURLString)
-	if err != nil || response.StatusCode != 200  { 
-		 funcErr = errors.New("URL " + parsedURLString + " skipped: file does not exist at specified location")
-		 fmt.Println(response.Body)
-		 return nil, funcErr
-	} // if 
+	
+
+	// check file extension, if not .csv or .json, continue execution and delay 
+	// judgement until content inspection 
+
+	// api endpoints supplied should be supported if they return .csv or .json content
 	if fileExtension != ".csv" && fileExtension != ".json" { 
-		funcErr = errors.New("URL " + parsedURLString + " skipped: invalid URL type")
-		return nil, funcErr
+
+		// funcErr = errors.New("URL " + parsedURLString + " skipped: invalid URL type")
+		// return nil, funcErr
+
+		// attempt to retrieve file, if error, log
+		response, err := http.Get(parsedURLString)
+		if err != nil || response.StatusCode != 200  { 
+			// may need to do more error checking here based on empty/misleading headers 
+			funcErr = errors.New("URL " + parsedURLString + " skipped: file does not exist at specified location")
+		 	return nil, funcErr
+		} // if 
+		
+		// consume stream and load content 
+		data, err := io.ReadAll(response.Body)
+		if err != nill { 
+			funcErr = errors.New("URL " + parsedURLString + " skipped: issue reading content of response body")
+			return nil, funcErr
+		} // if 
+		response.Body.Close()
+
+		// create reader for validation 
+		validationReader, err := bytes.NewReader(data)
+		
+		// reader that will be returned 
+		finalReader, err := bytes.NewReader(data)
+
+		
 	} else { 
 		
+		/* 
+
+		Handle Transparent Compression Here
+
+			// Read first few bytes of response body (512 bytes?)
+			// Look for gzip indicator - 0x1F 0x88
+
+			// If gzip wrap response body in gzip.NewReader() 
+			// Else use response body as is 
+
+
+		*/
+
+
+
 		// check content type 
 		contentType := response.Header.Get("Content-Type")
 		if strings.Contains(contentType, "application/json") { 
