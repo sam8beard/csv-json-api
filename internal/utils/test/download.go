@@ -33,37 +33,32 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 		return nil, funcErr
 	} // if 
 	
-	// check if file exist at url
+	// parsed URL String for file retrieval 
 	parsedURLString := parsedURL.String()
 
-	fileExtension := filepath.Ext(parsedURLString)
+	// extension for error checking
+	fileExtension := filepath.Ext(parsedURL.Path)
 
 	// if url contains an extension of some sort and that extension is not .csv or .json,
 	// return an error 
-	if strings.Contains(fileExtension, ".") {
-		fmt.Println("This should be printing")
-		if fileExtension != ".csv" && fileExtension != ".json" { 
-			funcErr = errors.New("URL " + parsedURLString + " skipped: invalid URL type")
-			return nil, funcErr
-		} // if 
+	if fileExtension != "" && fileExtension != ".csv" && fileExtension != ".json" { 
+		funcErr = errors.New("URL " + parsedURLString + " skipped: invalid URL type")
+		return nil, funcErr
 	} // if 
-
 	
 
-	// check file extension, if not .csv or .json, continue execution and delay 
-	// judgement until content inspection 
-
+	// check file extension, if empty (api endpoint), .csv, or .json, continue execution and delay 
+	// judgement until content inspection. 
 	// api endpoints supplied should be supported if they return .csv or .json content
-	if fileExtension != ".csv" && fileExtension != ".json" { 
 
-		// funcErr = errors.New("URL " + parsedURLString + " skipped: invalid URL type")
-		// return nil, funcErr
+	// THIS CONDITION IS NOT NEEDED - REMOVE
+	if fileExtension == "" || fileExtension == ".json" || fileExtension == ".csv" { 
 
 		// attempt to retrieve file, if error, log
 		response, err := http.Get(parsedURLString)
 		if err != nil || response.StatusCode != 200  { 
-			// may need to do more error checking here based on empty/misleading headers 
-			funcErr = errors.New("URL " + parsedURLString + " skipped: file does not exist at specified location")
+			// may need to do more error checking here based on empty/misleading headers !!!
+			funcErr = errors.New("URL " + parsedURLString + " skipped: issue retrieving file - " + response.Status)
 		 	return nil, funcErr
 		} // if 
 		
@@ -75,21 +70,53 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 		} // if 
 		response.Body.Close()
 		
-		// reader that will be returned 
-		finalReader, err := bytes.NewReader(data)
+		// // reader that will be returned 
+		// finalReader, err := bytes.NewReader(data)
+		// var finalReader io.ReadCloser
+		// var validationReader io.ReadCloser
+		// var gzipReader gzip.Reader
 
-		// reader for format validation 
-		validationReader, err := bytes.NewReader(data)
+		// // reader for format validation 
+		// validationReader, err := bytes.NewReader(data)
 		
-		// if response body contents is compressed, decompress it
+		// if response body contents is compressed, decompress, validate, and return
 		if isGzip(data) { 
-			// wrap reader in gzip reader 
-			tempReader, err := bytes.NewReader(data)
+			// temp reader for validationCSV reader
+			tempReader1, err := bytes.NewReader(data)
 			_ = err // MIGHT HAVE TO DEAL WITH THIS
-			gzipReader, err := gzip.NewReader(tempReader) 
+
+			// temp reader for validationJSON reader
+			tempReader2, err := bytes.NewReader(data)
+			_ = err // MIGHT HAVE TO DEAL WITH THIS
+
+			// temp reader for final reader
+			tempReader3, err:= bytes.NewReader(data)
+			_ = err // MIGHT HAVE TO DEAL WITH THIS
+
+			validationReaderCSV, err := gzip.NewReader(tempReader1)
 			if err != nil { 
 				fmt.Println("detected as gzip file, but is not gzip file. REVIEW")
 			} // if 
+
+			validationReaderJSON, err := gzip.NewReader(tempReader2)
+			_ = err // dont have to deal with, above error will trigger if not gzip
+
+			finalReader, err := gzip.NewReader(tempReader3)
+			_ = err // same as above
+			
+
+			// validate file, if not 
+			csvErr:= ValidateCSV(validationReaderCSV)
+			jsonErr := ValidateJSON(validationReaderJSON)
+
+			
+
+			
+
+			
+		// response is not compressed - validate and return 
+		} else { 
+
 		} // if 
 		
 		
@@ -107,7 +134,8 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 		*/
 		
 		
-	} else { 
+	
+	} else  { 
 		
 		
 
