@@ -5,7 +5,7 @@ import (
 	"testing"
 	"net/url"
 	// "io"
-	"compress/gzip"
+	// "compress/gzip"
 )
 
 func TestDownloadFile(t *testing.T) { 
@@ -19,12 +19,13 @@ func TestDownloadFile(t *testing.T) {
 	fmt.Printf("%T\n", fileReader)
 	fmt.Println(downloadErr)
 	fmt.Println("TestDownloadFile")
-	gzipReader, err := gzip.NewReader(fileReader)
-	fmt.Printf("%T\n", gzipReader)
+	// gzipReader, err := gzip.NewReader(fileReader)
+	// fmt.Printf("%T\n", gzipReader)
 
-	// fileContents, err := io.ReadAll(gzipReader)
-	if err != nil { 
-		fmt.Println(err)
-	} // if 
-	// fmt.Println(fileContents)
+	// fileContents, err := io.ReadAll(fileReader)
+	// fmt.Printf("%T\n", fileContents)
+	// if err != nil { 
+	// 	// fmt.Println(err)
+	// } // if 
+	// fmt.Println(string(fileContents))
 } // TestDownloadFile
