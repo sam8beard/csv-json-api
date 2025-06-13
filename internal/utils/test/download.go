@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"io"
 	"path/filepath"
-	
 )
 
 /* 
@@ -59,11 +58,11 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 		funcErr = errors.New("URL " + parsedURLString + " skipped: invalid URL type")
 		return nil, funcErr
 	} else { 
-	
+		
 		// check content type 
 		contentType := response.Header.Get("Content-Type")
 		if strings.Contains(contentType, "application/json") { 
-
+		
 			// open reader 
 			jsonReader := response.Body
 			fmt.Printf("%T\n", jsonReader)
@@ -73,7 +72,7 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 				funcErr = errors.New("URL " + parsedURLString + " skipped: invalid or unsupported formatting")
 				return nil, funcErr
 			} // if 
-			
+			jsonReader.Close()
 		} else if (strings.Contains(contentType, "text/plain")) || 
 		(strings.Contains(contentType, "text/csv")) || 
 		(strings.Contains(contentType, "application/csv")) { 
@@ -94,6 +93,9 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 		} // if 
 
 	} // if 
+	fmt.Println("Testing: ", parsedURLString)
+	fmt.Println(response.Header.Get("Content-Length"))
+	fmt.Println(response.Header.Get("Content-Type"))
 	
 	return response.Body, funcErr
 } // DownloadFile

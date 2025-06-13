@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"encoding/json" // for constructing response 
 	"errors"
+	"path"
+
 	// "github.com/go-chi/chi/v5"
 	// "github.com/go-chi/chi/v5/middleware"
 )
@@ -190,13 +192,20 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 				*/
 
 				// attemp to download file, if not, return custom error message 
+
 				fileReader, err := DownloadFile(rawURL)
 				if err != nil { 
 					response.SkippedCounter++ 
 					response.SkippedFiles = append(response.SkippedFiles, err.Error())
 					continue
 				} // if 
-
+				
+				// get base url path for log
+				parsedURL, err := url.Parse(rawURL) 
+				_ = err
+				parsedURLString := parsedURL.String()
+				baseElement := path.Base(parsedURLString)
+				fmt.Println("Testing: ", baseElement)
 				// check file type for conversion, if not csv, then must be json
 				err := ValidateCSV(fileReader)
 				if err != nil {
