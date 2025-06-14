@@ -207,37 +207,30 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 					fileType = ".csv"
 				} // if 
 
+				var convertedContents []byte
 
-				// // get base url path for log
-				// parsedURL, err := url.Parse(rawURL) 
-				// _ = err
-				// parsedURLString := parsedURL.String()
-				// baseElement := path.Base(parsedURLString)
-				// fmt.Println("Testing: ", baseElement)
-				// // check file type for conversion, if not csv, then must be json
-				// err := ValidateCSV(fileReader)
-				// if err != nil {
-				// 	// convert json file to csv
-				// 	fileContents, err := ConvertToCSV(fileReader)
-				// 	_ = err // this error doesn't need to be dealt with
-
-				// 	// WRITE CONVERTED FILE TO ZIP USING ZIPWRITER
-
-				// 	// need to find a way to truncate/transform url of successfully downloaded 
-				// 	// file to a file name we can use in the zip file/converted files slice
-
-				// } else { 
-					// convert csv file to json 
-					// fileContents, err := ConvertToJSON(fileReader)
-					// _ = err // this error doesn't need to be dealt with
-
-					// WRITE CONVERTED FILE TO ZIP USING ZIPWRITER
-
-
-					// need to find a way to truncate/transform url of successfully downloaded 
-					// file to a file name we can use in the zip file/converted files slice
-
+				// if file type is json, convert to csv, and vice versa 
+				if fileType == ".json" { 
+					convertedContents, err := ConvertToCSV(fileReader)
+					if err != nil { 
+						msg := "URL " + rawURL + " skipped: could not convert"
+						response.SkippedCounter++
+						response.SkippedFiles = append(response.SkippedFiles, msg)
+					} // if 
+				} else if fileType == ".csv" { 
+					convertedContents, err := ConvertToJSON(fileReader)
+					if err != nil { 
+						msg := "URL " + rawURL + " skipped: could not convert"
+						response.SkippedCounter++
+						response.SkippedFiles = append(response.SkippedFiles, msg)
+					} // if 
 				} // if 
+
+				// make file (determine file name here) to write converted contents to
+						// maybe use raw url to construct name for file
+				// write that file to the zip archive
+
+				
 			} // for	
 		} else { 
 			// THIS NEEDS TO BE CHANGED 
