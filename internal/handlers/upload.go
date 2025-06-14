@@ -3,17 +3,16 @@ package handlers
 import ( 
 	"net/http"
 	// "github.com/sam8beard/csv-json-api/internal/utils"
-	"os"
 	"fmt"
 	"path/filepath"
-	"net/url"
 	"encoding/json" // for constructing response 
-	"errors"
 	"path"
 	"archive/zip"
 	"time"
 	"strings"
 	"log"
+	"bytes"
+	"io"
 	// "github.com/go-chi/chi/v5"
 	// "github.com/go-chi/chi/v5/middleware"
 )
@@ -23,7 +22,7 @@ CTRL F TO SEE WHAT NEEDS TO BE CLEANED UP
 
 */
 type Response struct { 
-	ZipURL string
+	// ZipURL string
 	SkippedFiles []string
 	ConvertedFiles []string
 	SkippedCounter int
@@ -45,16 +44,14 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	} // if 
 	
-	// create zip archive to return for download
-	zipArchive, err := os.Create("archive.zip")
-	if err != nil { 
-		panic(err)
-	} // if 
+	// create zip writer to write files for download
+	var buf bytes.Buffer
+	zipWriter := zip.NewWriter(&buf)
+	defer zipWriter.Close()
 
-	zipWriter := zip.NewWriter(zipArchive)
 	
 	// populate Multipart Form to retrieve file and file header (max 10MB)
-	err = r.ParseMultipartForm(10 << 20)
+	err := r.ParseMultipartForm(10 << 20)
 	
 	if err != nil { 
 		http.Error(w, "Unable to parse form ", http.StatusBadRequest)
@@ -79,6 +76,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 						continue
 					} // if 
 					
+					var convertedContents []byte
 					// if file is a csv file
 					if fileExtension == ".csv" {
 
@@ -108,7 +106,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 						} // if 
 						
 						// attempt to convert file
-						convertedContents, err := utils.ConvertToJSON(fileReader)
+						convertedContents, err = utils.ConvertToJSON(fileReader)
 						
 						// could not convert file
 						if err != nil { 
@@ -125,11 +123,13 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 						// write that file to the zip  
 						fileWriter, err := zipWriter.Create(newFileName)
 						if err != nil { 
-							log.Fatal(err)
+							http.Error(w, "Internal server error", http.StatusInternalServerError)
+							return 
 						} // if 
 						_, err = fileWriter.Write(convertedContents)
 						if err != nil { 
-							log.Fatal(err)
+							http.Error(w, "Internal server error", http.StatusInternalServerError)
+							return 
 						} // if 
 						response.ConvertedFiles = append(response.ConvertedFiles, newFileName)
 						response.ConvertedCounter++
@@ -166,7 +166,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 						
 						// attempt to convert file 
-						convertedContents, err := utils.ConvertToCSV(fileReader)
+						convertedContents, err = utils.ConvertToCSV(fileReader)
 
 						// could not convert file
 						if err != nil { 
@@ -221,14 +221,14 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 					continue
 				} // if 
 
-				buf, _ := io.ReadAll(fileReader)
+				fileBuf, _ := io.ReadAll(fileReader)
 				
 				// create readers for validation and conversion
-				validationReader := bytes.NewReader(buf)
-				conversionReader := bytes.NewReader(buf)
+				validationReader := bytes.NewReader(fileBuf)
+				conversionReader := bytes.NewReader(fileBuf)
 				
 				// retrieve file type again based on revalidation 
-				csvErr := ValidateCSV(validationReader)
+				csvErr := utils.ValidateCSV(validationReader)
 				var fileType string
 				if csvErr != nil { 
 					fileType = ".json"
@@ -239,7 +239,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 				// if file type is json, convert to csv, and vice versa 
 				if fileType == ".json" { 
-					convertedContents, err := ConvertToCSV(conversionReader)
+					convertedContents, err = utils.ConvertToCSV(conversionReader)
 					if err != nil { 
 						msg := "URL " + rawURL + " skipped: could not convert"
 						response.SkippedCounter++
@@ -247,7 +247,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 						continue
 					} // if 
 				} else if fileType == ".csv" { 
-					convertedContents, err := ConvertToJSON(conversionReader)
+					convertedContents, err = utils.ConvertToJSON(conversionReader)
 					if err != nil { 
 						msg := "URL " + rawURL + " skipped: could not convert"
 						response.SkippedCounter++
@@ -289,14 +289,33 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "No files could be converted", http.StatusBadRequest)
     	return
 	} // if 
-
-	zipWriter.Close()
-	zipArchive.Close()
 	
-	// Encode response and write it to response writer 
-	encodedResponse, err := json.Marshal(response)
-	w.Header().Set("Content-Disposition", "filename=archive.zip")
-	w.Header().Set("Content-Type", "application/json")
+	
+	encodedResponse, err := json.MarshalIndent(response, "", "	")
+	if err != nil { 
+		http.Error(w, "Failed to encode log", http.StatusBadRequest)
+		return
+	} // if 
+	// add json log/report of response 
+	fileWriter, err := zipWriter.Create("log.json")
+	if err != nil { 
+		http.Error(w, "Failed to create log file", http.StatusBadRequest)
+		return
+	} // if
+	_, err = fileWriter.Write(encodedResponse)
+	if err != nil { 
+		http.Error(w, "Failed to write log to archive", http.StatusBadRequest)
+		return
+	} // if 
+	// close zip writer
+	
+	w.Header().Set("Content-Type", "application/zip")
+	w.Header().Set("Content-Disposition", "attachment; filename=\"archive.zip\"")
 	w.WriteHeader(http.StatusOK)
-	w.Write(encodedResponse)
+
+	_, err = w.Write(buf.Bytes())
+	if err != nil { 
+		log.Println("Failed to write archive to response:", err)
+		return
+	} // if 
 } // UploadHandler 
