@@ -6,13 +6,22 @@ import (
 	"io"
 	"encoding/json"
 	"bytes"
+	"strings"
 )
 
 func ConvertToJSON(r io.ReadCloser) ([]byte, error) { 
 	csvReader := csv.NewReader(r)
+
+	// might have to remove this
+	csvReader.TrimLeadingSpace = true
 	var funcErr error
 	// extract header for json object keys
 	keys, err := csvReader.Read(); if err != nil {funcErr = err}
+
+	// might have to remove this 
+	for i, key := range keys {
+        keys[i] = strings.Trim(key, "\"")
+    }
 	data := make([]map[string]string, 0)
 	
 	for { 
