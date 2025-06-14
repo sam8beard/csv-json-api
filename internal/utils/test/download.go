@@ -39,18 +39,14 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 	// extension for error checking
 	fileExtension := filepath.Ext(parsedURL.Path)
 
-	// if url contains an extension of some sort and that extension is not .csv or .json,
-	// return an error 
-	if fileExtension != "" && fileExtension != ".csv" && fileExtension != ".json" { 
-		funcErr = errors.New("URL " + parsedURLString + " skipped: invalid URL type")
-		return nil, funcErr
-	} // if 
-
 	// attempt to retrieve file, if error, log
 	response, err := http.Get(parsedURLString)
-	if err != nil || response.StatusCode != 200  { 
-		// may need to do more error checking here based on empty/misleading headers !!!
-		funcErr = errors.New("URL " + parsedURLString + " skipped: issue retrieving file - " + response.Status)
+	if err != nil {
+		funcErr = errors.New("URL " + parsedURLString + " skipped: could not retrieve file - " + err.Error())
+		return nil, funcErr
+	} // if 
+	if response.StatusCode != 200 {
+		funcErr = errors.New("URL " + parsedURLString + " skipped: bad status code - " + strconv.Itoa(response.StatusCode))
 		return nil, funcErr
 	} // if 
 
@@ -60,7 +56,7 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 		funcErr = errors.New("URL " + parsedURLString + " skipped: issue reading content of response body")
 		return nil, funcErr
 	} // if 
-	response.Body.Close()
+	defer response.Body.Close()
 
 	// if response body contents is compressed - decompress, validate, and return
 	if isGzip(data) { 
@@ -71,7 +67,7 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 			return nil, funcErr
 		} // if 
 		
-		// validate that there isnt trailing uncompressed content in flie, return an error if so
+		// validate that there isnt trailing uncompressed content in file, return an error if so
 		cleanFile, err := gzip.NewReader(bytes.NewReader(data))
 		_ = err
 		buf := make([]byte, 512)
@@ -82,10 +78,16 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 		} // if 
 
 		validationReaderCSV, err := gzip.NewReader(bytes.NewReader(data))
-		_ = err // dont have to deal with, above error will trigger if not gzip
+		if err != nil {
+			funcErr = errors.New("URL " + parsedURLString + " skipped: invalid gzip file during CSV validation")
+			return nil, funcErr
+		} // if 
 
 		validationReaderJSON, err := gzip.NewReader(bytes.NewReader(data))
-		_ = err 
+		if err != nil {
+			funcErr = errors.New("URL " + parsedURLString + " skipped: invalid gzip file during JSON validation")
+			return nil, funcErr
+		} // if 	
 
 		
 		// validate file, at least one of these will be nil
@@ -94,12 +96,8 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 		csvErr := ValidateCSV(validationReaderCSV)
 		jsonErr := ValidateJSON(validationReaderJSON)
 
-		// file was of type csv, but formatting was invalid 
-		if fileExtension == ".csv" && csvErr != nil { 
-			funcErr = errors.New("URL " + parsedURLString + " skipped: invalid or unsupported formatting")
-			return nil, funcErr
-		// file was of type json, but formatting was invalid 
-		} else if fileExtension == ".json" && jsonErr != nil { 
+		// file was of valid type, but formatting was invalid 
+		if (fileExtension == ".csv" && csvErr != nil) || (fileExtension == ".json" && jsonErr != nil) { 
 			funcErr = errors.New("URL " + parsedURLString + " skipped: invalid or unsupported formatting")
 			return nil, funcErr
 		// file returned by endpoint was neither json or csv 
@@ -107,13 +105,28 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 			funcErr = errors.New("URL " + parsedURLString + " skipped: invalid file type")
 			return nil, funcErr
 		} // if 
+
 		finalReader = gzipReader
-		
+
 	// response is not compressed - validate and return 
 	} else { 
-		// TO DO
-		// handle non compressed file here 
-			
+
+		// separate readers for each validation and the final returned reader
+		validationReaderCSV := bytes.NewReader(data)
+		validationReaderJSON := bytes.NewReader(data)
+		finalReader = io.NopCloser(bytes.NewReader(data)) 
+
+		csvErr := ValidateCSV(validationReaderCSV)
+		jsonErr := ValidateJSON(validationReaderJSON)
+
+		if (fileExtension == ".csv" && csvErr != nil) || (fileExtension == ".json" && jsonErr != nil) {
+			funcErr = errors.New("URL " + parsedURLString + " skipped: invalid or unsupported formatting")
+			return nil, funcErr
+		} else if fileExtension == "" && jsonErr != nil && csvErr != nil {
+			funcErr = errors.New("URL " + parsedURLString + " skipped: invalid file type")
+			return nil, funcErr
+		} // if 
+
 	} // if 
 
 	return finalReader, nil

@@ -1,52 +1,47 @@
 package test
 
-import ( 
-	"io"
-	"encoding/json"
+import (
 	"encoding/csv"
-	"io/ioutil"
+	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 )
 
-/* 
-Conditions to check for csv files: 
-1.	File is parseable (no malformed CSV structure)
-2.	Header exists (optional depending on your rules)
-3.	All rows have same number of columns
-4.	No empty rows / fields
-5.	Required columns exist (e.g., “id”, “name”, etc.)
-6.	Field value formats (e.g., emails, numbers)
-*/
-func ValidateCSV(r io.ReadCloser) error { 
-	// fmt.Println("Testing")
-	csvReader := csv.NewReader(r) 
-	// Read file header first
-	header, err := csvReader.Read(); if err != nil { return err }
-	csvReader.FieldsPerRecord = len(header)
-	// fmt.Println("File header: ", header)		
-	for { 
-		_, err := csvReader.Read()
-		if err == io.EOF { break } else if err != nil { return err }
-		// For testing
-		// if err == nil { fmt.Println(row)}
-	}
-	return err
-} // ValidateCSV
+// ValidateCSV checks that the CSV has a readable header and consistent row lengths.
+func ValidateCSV(r io.ReadCloser) error {
+	defer r.Close()
 
-/*
-I know that encoding/json literally has a built in function to 
-validate json objects and this is redundant in every way, 
-but I'm instantiating my own function for my sanity.
-
-I'm just wrapping the call to json.Validate in this function 
-and returning an error instead of bool.
-*/
-func ValidateJSON(r io.ReadCloser) error {
-	fileContents, readErr := ioutil.ReadAll(r)
-	if readErr != nil {fmt.Println(readErr)}
-	var err error
-	if json.Valid(fileContents) != true { 
+	csvReader := csv.NewReader(r)
+	header, err := csvReader.Read()
+	if err != nil {
 		return err
 	} // if 
-	return err
+	csvReader.FieldsPerRecord = len(header)
+
+	for {
+		_, err := csvReader.Read()
+		if err == io.EOF {
+			break
+		} // if 
+		if err != nil {
+			return err
+		} // if 
+	} // for 
+
+	return nil
+} // ValidateCSV
+
+// ValidateJSON checks whether the entire file is valid JSON.
+func ValidateJSON(r io.ReadCloser) error {
+	defer r.Close()
+
+	data, err := ioutil.ReadAll(r)
+	if err != nil {
+		return err
+	} // if 
+	if !json.Valid(data) {
+		return fmt.Errorf("invalid JSON structure")
+	} // if 
+	return nil
 } // ValidateJSON
