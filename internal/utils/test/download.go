@@ -25,7 +25,7 @@ Cases to account for:
 */ 
 func DownloadFile(rawURL string) (io.ReadCloser, error) { 
 	var funcErr error 
-
+	var finalReader io.ReadCloser
 	// parse URL and check error
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil { 
@@ -45,161 +45,79 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 		funcErr = errors.New("URL " + parsedURLString + " skipped: invalid URL type")
 		return nil, funcErr
 	} // if 
-	
 
-	// check file extension, if empty (api endpoint), .csv, or .json, continue execution and delay 
-	// judgement until content inspection. 
-	// api endpoints supplied should be supported if they return .csv or .json content
-
-	// THIS CONDITION IS NOT NEEDED - REMOVE!!!!
-	// We can remove because: by the time the execution gets here, we know the 
-	// url is either an api endpoint, a json file, or a csv file 
-	if fileExtension == "" || fileExtension == ".json" || fileExtension == ".csv" { 
-
-		// attempt to retrieve file, if error, log
-		response, err := http.Get(parsedURLString)
-		if err != nil || response.StatusCode != 200  { 
-			// may need to do more error checking here based on empty/misleading headers !!!
-			funcErr = errors.New("URL " + parsedURLString + " skipped: issue retrieving file - " + response.Status)
-		 	return nil, funcErr
-		} // if 
-		
-		// consume stream and load content for use in testing readers 
-		data, err := io.ReadAll(response.Body)
-		if err != nill { 
-			funcErr = errors.New("URL " + parsedURLString + " skipped: issue reading content of response body")
-			return nil, funcErr
-		} // if 
-		response.Body.Close()
-		
-		// // reader that will be returned 
-		// finalReader, err := bytes.NewReader(data)
-		// var finalReader io.ReadCloser
-		// var validationReader io.ReadCloser
-		// var gzipReader gzip.Reader
-
-		// // reader for format validation 
-		// validationReader, err := bytes.NewReader(data)
-		// var finalReader io.ReadCloser
-		// var validateCSVReader io.ReadCloser
-		// var validateJSONReader io.ReadCloser
-
-		// // if initialized we know the file was compressed, a gzip reader will be returned
-		// var gzipReader gzip.Reader
-
-		// if response body contents is compressed - decompress, validate, and return
-		if isGzip(data) { 
-			tempReader := bytes.NewReader(data)
-			gzipReader := gzip.NewReader(tempReader)
-		
-			// temp reader for validationCSV reader
-			tempReader1, err := bytes.NewReader(data)
-			_ = err // MIGHT HAVE TO DEAL WITH THIS
-
-			// temp reader for validationJSON reader
-			tempReader2, err := bytes.NewReader(data)
-			_ = err // MIGHT HAVE TO DEAL WITH THIS
-
-			// temp reader for final reader
-			tempReader3, err:= bytes.NewReader(data)
-			_ = err // MIGHT HAVE TO DEAL WITH THIS
-
-			validationReaderCSV, err := gzip.NewReader(tempReader1)
-			if err != nil { 
-				fmt.Println("detected as gzip file, but is not gzip file. REVIEW")
-			} // if 
-
-			validationReaderJSON, err := gzip.NewReader(tempReader2)
-			_ = err // dont have to deal with, above error will trigger if not gzip
-
-			finalReader, err := gzip.NewReader(tempReader3)
-			_ = err // same as above
-			
-
-			// validate file, at least one of these will be nil
-			// if both are nill, return error 
-			
-			csvErr := ValidateCSV(validationReaderCSV)
-			jsonErr := ValidateJSON(validationReaderJSON)
-
-			// file was of type .csv, but formatting was invalid 
-			if fileExtension == ".csv" && csvErr != nil { 
-				
-			// file was of type json, but formatting was invalid 
-			} else if fileExtension == ".json" && jsonErr != nil { 
-				
-			// file returned by endpoint was neither json or csv 
-			} else if fileExtension == "" && jsonErr != nil && csvErr != nill { 
-				
-			} // if 
-
-			
-			
-		// response is not compressed - validate and return 
-		} else { 
-
-		} // if 
-		
-		
-		/* 
-
-		Handle Transparent Compression Here
-
-			// Read first few bytes of response body (512 bytes?)
-			// Look for gzip indicator - 0x1F 0x88
-
-			// If gzip wrap response body in gzip.NewReader() 
-			// Else use response body as is 
-
-
-		*/
-		
-		
-	
-	} else  { 
-		
-		
-
-
-		// check content type 
-		contentType := response.Header.Get("Content-Type")
-		if strings.Contains(contentType, "application/json") { 
-		
-			// open reader 
-			jsonReader := response.Body
-			fmt.Printf("%T\n", jsonReader)
-			// pass reader to validate function
-			err := ValidateJSON(jsonReader)
-			if err != nil { 
-				funcErr = errors.New("URL " + parsedURLString + " skipped: invalid or unsupported formatting")
-				return nil, funcErr
-			} // if 
-			jsonReader.Close()
-		} else if (strings.Contains(contentType, "text/plain")) || 
-		(strings.Contains(contentType, "text/csv")) || 
-		(strings.Contains(contentType, "application/csv")) { 
-
-			// open reader 
-			csvReader := response.Body
-			
-			// pass reader to validate function
-			err := ValidateCSV(csvReader)
-			if err != nil { 
-				funcErr = errors.New("URL " + parsedURLString  + " skipped: invalid or unsupported formatting")
-				return nil, funcErr
-			} // if 
-
-		} else { 
-			funcErr = errors.New("URL " + parsedURLString + " skipped: unsupported file type")
-			return nil, funcErr
-		} // if 
-
+	// attempt to retrieve file, if error, log
+	response, err := http.Get(parsedURLString)
+	if err != nil || response.StatusCode != 200  { 
+		// may need to do more error checking here based on empty/misleading headers !!!
+		funcErr = errors.New("URL " + parsedURLString + " skipped: issue retrieving file - " + response.Status)
+		return nil, funcErr
 	} // if 
-	fmt.Println("Testing: ", parsedURLString)
-	fmt.Println(response.Header.Get("Content-Length"))
-	fmt.Println(response.Header.Get("Content-Type"))
-	
-	return response.Body, funcErr
+
+	// consume stream and load content for use in testing readers 
+	data, err := io.ReadAll(response.Body)
+	if err != nil { 
+		funcErr = errors.New("URL " + parsedURLString + " skipped: issue reading content of response body")
+		return nil, funcErr
+	} // if 
+	response.Body.Close()
+
+	// if response body contents is compressed - decompress, validate, and return
+	if isGzip(data) { 
+
+		gzipReader, err := gzip.NewReader(bytes.NewReader(data))
+		if err != nil { 
+			funcErr = errors.New("URL " + parsedURLString + " skipped: marked as gzip but not compressed")
+			return nil, funcErr
+		} // if 
+		
+		// validate that there isnt trailing uncompressed content in flie, return an error if so
+		cleanFile, err := gzip.NewReader(bytes.NewReader(data))
+		_ = err
+		buf := make([]byte, 512)
+		_, err = cleanFile.Read(buf)
+		if err != nil { 
+			funcErr = errors.New("URL " + parsedURLString + " skipped: compressed file is malformed")
+			return nil, funcErr
+		} // if 
+
+		validationReaderCSV, err := gzip.NewReader(bytes.NewReader(data))
+		_ = err // dont have to deal with, above error will trigger if not gzip
+
+		validationReaderJSON, err := gzip.NewReader(bytes.NewReader(data))
+		_ = err 
+
+		
+		// validate file, at least one of these will be nil
+		// if both are nil, return error 
+		
+		csvErr := ValidateCSV(validationReaderCSV)
+		jsonErr := ValidateJSON(validationReaderJSON)
+
+		// file was of type csv, but formatting was invalid 
+		if fileExtension == ".csv" && csvErr != nil { 
+			funcErr = errors.New("URL " + parsedURLString + " skipped: invalid or unsupported formatting")
+			return nil, funcErr
+		// file was of type json, but formatting was invalid 
+		} else if fileExtension == ".json" && jsonErr != nil { 
+			funcErr = errors.New("URL " + parsedURLString + " skipped: invalid or unsupported formatting")
+			return nil, funcErr
+		// file returned by endpoint was neither json or csv 
+		} else if fileExtension == "" && jsonErr != nil && csvErr != nil { 
+			funcErr = errors.New("URL " + parsedURLString + " skipped: invalid file type")
+			return nil, funcErr
+		} // if 
+		finalReader = gzipReader
+		
+	// response is not compressed - validate and return 
+	} else { 
+		// TO DO
+		// handle non compressed file here 
+			
+	} // if 
+
+	return finalReader, nil
+			
 } // DownloadFile
 
 func isGzip(data []byte) bool { 
