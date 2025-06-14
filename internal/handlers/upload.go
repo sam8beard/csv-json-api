@@ -10,7 +10,8 @@ import (
 	"encoding/json" // for constructing response 
 	"errors"
 	"path"
-
+	"archive/zip"
+	"time"
 	// "github.com/go-chi/chi/v5"
 	// "github.com/go-chi/chi/v5/middleware"
 )
@@ -34,6 +35,16 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	response.ZipURL = ""
 	response.SkippedCounter = 0
 	response.ConvertedCounter = 0
+
+	// create zip archive to return for download
+	zipArchive, err := os.Create("archive.zip")
+	if err != nil { 
+		panic(err)
+	} // if 
+	defer archive.Close()
+
+	zipWriter := zip.NewWriter(zipArchive)
+	defer zipWriter.Close() 
 
 	if r.Method != "POST" { 
 		http.Error(w, "Only POST allowed ", http.StatusMethodNotAllowed)
@@ -225,11 +236,19 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 						response.SkippedFiles = append(response.SkippedFiles, msg)
 					} // if 
 				} // if 
-
+				
 				// make file (determine file name here) to write converted contents to
 						// maybe use raw url to construct name for file
-				// write that file to the zip archive
+				URLBase := path.Base(rawURL)
+				t := time.Now()
+				formattedTime := fmt.Sprintf("%d-%02d-%02dT%02d:%02d:%02d",
+       				t.Year(), t.Month(), t.Day(),
+       				t.Hour(), t.Minute(), t.Second())
+				newFileName := URLBase + "_" + formattedTime + fileType
 
+				// write that file to the zip 
+				
+				
 				
 			} // for	
 		} else { 
