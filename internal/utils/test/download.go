@@ -1,15 +1,18 @@
 package test
 
 import ( 
-	"fmt"
+	// "fmt"
 	// "os"
 	"net/http"
 	"errors"
-	"strings"
+	// "strings"
 	"net/url"
 	"io"
 	"path/filepath"
 	"bytes"
+	"strconv"
+	"compress/gzip"
+	// "strings"
 )
 
 /* 
@@ -36,9 +39,15 @@ func DownloadFile(rawURL string) (io.ReadCloser, error) {
 	// parsed URL String for file retrieval 
 	parsedURLString := parsedURL.String()
 
+	// url is root domain, cannot download file
+	if parsedURL.Path == "" { 
+		funcErr = errors.New("URL " + parsedURLString + " skipped: invalid URL type")
+		return nil, funcErr
+	}
+
 	// extension for error checking
 	fileExtension := filepath.Ext(parsedURL.Path)
-
+	
 	// attempt to retrieve file, if error, log
 	response, err := http.Get(parsedURLString)
 	if err != nil {

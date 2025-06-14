@@ -9,16 +9,17 @@ import (
 )
 
 // ValidateCSV checks that the CSV has a readable header and consistent row lengths.
-func ValidateCSV(r io.ReadCloser) error {
-	defer r.Close()
+func ValidateCSV(r io.Reader) error {
+	// defer r.Close()
 
 	csvReader := csv.NewReader(r)
+	csvReader.TrimLeadingSpace = true
 	header, err := csvReader.Read()
 	if err != nil {
 		return err
 	} // if 
 	csvReader.FieldsPerRecord = len(header)
-
+	
 	for {
 		_, err := csvReader.Read()
 		if err == io.EOF {
@@ -33,8 +34,8 @@ func ValidateCSV(r io.ReadCloser) error {
 } // ValidateCSV
 
 // ValidateJSON checks whether the entire file is valid JSON.
-func ValidateJSON(r io.ReadCloser) error {
-	defer r.Close()
+func ValidateJSON(r io.Reader) error {
+	// defer r.Close()
 
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
