@@ -6,6 +6,7 @@ import (
 	"io"
 	"encoding/json"
 	"bytes"
+	"errors"
 )
 
 func ConvertToJSON(r io.ReadCloser) ([]byte, error) { 

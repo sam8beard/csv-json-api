@@ -169,7 +169,6 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		if r.MultipartForm.Value["urls"] != nil { 
 			for _, rawURL := range r.MultipartForm.Value["urls"] { 
 
-				
 				// if err != nil { 
 				// 	response.SkippedCounter++
 				// 	msg := "URL " + rawUrl + " skipped: could not parse"
@@ -192,7 +191,6 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 				*/
 
 				// attemp to download file, if not, return custom error message 
-
 				fileReader, err := DownloadFile(rawURL)
 				if err != nil { 
 					response.SkippedCounter++ 
@@ -200,28 +198,31 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 					continue
 				} // if 
 				
-				// get base url path for log
-				parsedURL, err := url.Parse(rawURL) 
-				_ = err
-				parsedURLString := parsedURL.String()
-				baseElement := path.Base(parsedURLString)
-				fmt.Println("Testing: ", baseElement)
-				// check file type for conversion, if not csv, then must be json
-				err := ValidateCSV(fileReader)
-				if err != nil {
-					// convert json file to csv
-					fileContents, err := ConvertToCSV(fileReader)
-					_ = err // this error doesn't need to be dealt with
+				csvErr := ValidateCSV(fileReader)
+				jsonErr := ValidateJSON(fileReader)
+				
+				// // get base url path for log
+				// parsedURL, err := url.Parse(rawURL) 
+				// _ = err
+				// parsedURLString := parsedURL.String()
+				// baseElement := path.Base(parsedURLString)
+				// fmt.Println("Testing: ", baseElement)
+				// // check file type for conversion, if not csv, then must be json
+				// err := ValidateCSV(fileReader)
+				// if err != nil {
+				// 	// convert json file to csv
+				// 	fileContents, err := ConvertToCSV(fileReader)
+				// 	_ = err // this error doesn't need to be dealt with
 
-					// WRITE CONVERTED FILE TO ZIP USING ZIPWRITER
+				// 	// WRITE CONVERTED FILE TO ZIP USING ZIPWRITER
 
-					// need to find a way to truncate/transform url of successfully downloaded 
-					// file to a file name we can use in the zip file/converted files slice
+				// 	// need to find a way to truncate/transform url of successfully downloaded 
+				// 	// file to a file name we can use in the zip file/converted files slice
 
-				} else { 
+				// } else { 
 					// convert csv file to json 
-					fileContents, err := ConvertToJSON(fileReader)
-					_ = err // this error doesn't need to be dealt with
+					// fileContents, err := ConvertToJSON(fileReader)
+					// _ = err // this error doesn't need to be dealt with
 
 					// WRITE CONVERTED FILE TO ZIP USING ZIPWRITER
 
