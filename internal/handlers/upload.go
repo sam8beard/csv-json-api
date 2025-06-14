@@ -198,9 +198,16 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 					continue
 				} // if 
 				
+				// retrieve file type again based on revalidation 
 				csvErr := ValidateCSV(fileReader)
-				jsonErr := ValidateJSON(fileReader)
-				
+				var fileType string
+				if csvErr != nil { 
+					fileType = ".json"
+				} else { 
+					fileType = ".csv"
+				} // if 
+
+
 				// // get base url path for log
 				// parsedURL, err := url.Parse(rawURL) 
 				// _ = err
