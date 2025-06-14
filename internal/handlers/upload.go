@@ -12,6 +12,7 @@ import (
 	"path"
 	"archive/zip"
 	"time"
+	"log"
 	// "github.com/go-chi/chi/v5"
 	// "github.com/go-chi/chi/v5/middleware"
 )
@@ -44,7 +45,6 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	defer archive.Close()
 
 	zipWriter := zip.NewWriter(zipArchive)
-	defer zipWriter.Close() 
 
 	if r.Method != "POST" { 
 		http.Error(w, "Only POST allowed ", http.StatusMethodNotAllowed)
@@ -180,28 +180,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 		if r.MultipartForm.Value["urls"] != nil { 
 			for _, rawURL := range r.MultipartForm.Value["urls"] { 
 
-				// if err != nil { 
-				// 	response.SkippedCounter++
-				// 	msg := "URL " + rawUrl + " skipped: could not parse"
-				// 	response.SkippedFiles = append(response.SkippedFiles, msg)
-				// 	continue
-				// } // if 
-
-				/* 
-
-				Need to find a way to detect what kind of file reader is returned by 
-				DownloadFile(). 
-
-				This needed to decide which convert function to call
-
-				I think we can just call both validate functions again 
-				to see which file type it is
-
-				Each validate function should return an error if incorrect file type is supplied?
-
-				*/
-
-				// attemp to download file, if not, return custom error message 
+				// attempt to download file, if not, return custom error message 
 				fileReader, err := DownloadFile(rawURL)
 				if err != nil { 
 					response.SkippedCounter++ 
@@ -245,10 +224,16 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
        				t.Year(), t.Month(), t.Day(),
        				t.Hour(), t.Minute(), t.Second())
 				newFileName := URLBase + "_" + formattedTime + fileType
-
-				// write that file to the zip 
 				
-				
+				// write that file to the zip  
+				fileWriter, err := zipWriter.Create(newFileName)
+				if err != nil { 
+					log.Fatal(err)
+				} // if 
+				_, err fileWriter.Write(convertedContents)
+				if err != nil { 
+					log.Fatal(err)
+				} // if 
 				
 			} // for	
 		} else { 
