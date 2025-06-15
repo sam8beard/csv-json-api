@@ -230,8 +230,12 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 				go func() { 
 
-				} () // routine 
-
+					// all download, validation, and conversion logic will go here
+					// fill out convertedFile object, pass to channel 
+					
+					wg.Done() 
+				}() // routine 
+				
 				// attempt to download file, if not, return custom error message 
 				fileReader, err := utils.DownloadFile(rawURL)
 				if err != nil { 
@@ -300,6 +304,12 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 				response.ConvertedFiles = append(response.ConvertedFiles, newFileName)
 				response.ConvertedCounter++
 			} // for	
+
+			// wait for all routines to finish 
+			wg.Wait()
+
+			// close channel here
+			
 		} else { 
 			http.Error(w, "Missing non-form field 'urls'", http.StatusBadRequest)
 		} // if 
