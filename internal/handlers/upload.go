@@ -12,14 +12,11 @@ import (
 	"strings"
 	"bytes"
 	"io"
+	"sync"
 	// "github.com/go-chi/chi/v5"
 	// "github.com/go-chi/chi/v5/middleware"
 )
-/* 
 
-CTRL F TO SEE WHAT NEEDS TO BE CLEANED UP
-
-*/
 type Response struct { 
 	// ZipURL string
 	SkippedFiles []string
@@ -27,6 +24,11 @@ type Response struct {
 	SkippedCounter int
 	ConvertedCounter int
 } // Response 
+
+type ConvertedFile struct { 
+	FileName string
+	Contents []byte
+} // ConvertedFile
 
 func UploadHandler(w http.ResponseWriter, r *http.Request) { 
 	response := Response{}
@@ -210,7 +212,26 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 	// (iterate through URLs)
 	if len(r.MultipartForm.Value) != 0 { 
 		if r.MultipartForm.Value["urls"] != nil { 
+
+			// declare wait group for counting tasks 
+			var wg sync.WaitGroup 
+
+			// we are expecting the amount of urls passed by the user 
+			// to finish processing before continuing
+			wg.Add(len(r.MultipartForm.Value["urls"]))
+
+			// make channel to store converted files 
+			convertedChan := make(chan ConvertedFile)
+
 			for _, rawURL := range r.MultipartForm.Value["urls"] { 
+
+				// make converted file object
+				convertedFile := ConvetedFile{}
+
+				go func() { 
+
+				} () // routine 
+
 				// attempt to download file, if not, return custom error message 
 				fileReader, err := utils.DownloadFile(rawURL)
 				if err != nil { 

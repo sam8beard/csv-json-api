@@ -15,17 +15,6 @@ import (
 	// "strings"
 )
 
-/* 
-Handle url verification logic here
-
-Cases to account for: 
-
-1. Unparsable URLS 
-2. Get files using http request -> verify file by... 
-	1. Checking content type AND THEN 
-	2. Call Validate[File Type] function 
-
-*/ 
 func DownloadFile(rawURL string) (io.ReadCloser, error) { 
 	var funcErr error 
 	var finalReader io.ReadCloser
