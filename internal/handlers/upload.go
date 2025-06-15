@@ -225,17 +225,25 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 			for _, rawURL := range r.MultipartForm.Value["urls"] { 
 
-				// make converted file object
-				convertedFile := ConvetedFile{}
+				// make converted file object to store information about file being 
+				// processed 
+				convertedFile := ConvertedFile{}
 
 				go func() { 
+					
 
 					// all download, validation, and conversion logic will go here
 					// fill out convertedFile object, pass to channel 
-					
+					convertedFile.FileName := fileNamePlaceholder
+					convertedFile.Content := contentPlaceholder
+
+					convertedChan <- convertedFile
+
 					wg.Done() 
 				}() // routine 
 				
+				wg.Wait()
+				close(convertedChan)
 				// attempt to download file, if not, return custom error message 
 				fileReader, err := utils.DownloadFile(rawURL)
 				if err != nil { 
@@ -309,7 +317,7 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 			wg.Wait()
 
 			// close channel here
-			
+
 		} else { 
 			http.Error(w, "Missing non-form field 'urls'", http.StatusBadRequest)
 		} // if 
