@@ -37,7 +37,7 @@ func ConvertToJSON(r io.ReadCloser) ([]byte, error) {
 	} // for 
 	// Testing 
 	encodedData, err := json.Marshal(data); if err != nil { funcErr = err } 
-	fmt.Println(string(encodedData))
+	// fmt.Println(string(encodedData))
 	return encodedData, funcErr
 } // ConvertToJSON
 
@@ -100,7 +100,7 @@ func ConvertToCSV(r io.ReadCloser) ([]byte, error) {
 	csvWriter.Flush()
 
 	byteArray := buffer.Bytes()
-	fmt.Println(string(byteArray))
+	// fmt.Println(string(byteArray))
 	return byteArray, funcErr
 } // ConvertToCSV
 

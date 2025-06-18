@@ -19,6 +19,7 @@ import (
 
 type Response struct { 
 	// ZipURL string
+	Mu sync.Mutex
 	SkippedFiles []string
 	ConvertedFiles []string
 	SkippedCounter int
@@ -29,6 +30,20 @@ type ConvertedFile struct {
 	FileName string
 	Contents []byte
 } // ConvertedFile
+
+func (resp *Response) LogSkipped(skippedFile string) { 
+	resp.Mu.Lock()
+	defer resp.Mu.Unlock()
+	resp.SkippedCounter++
+	resp.SkippedFiles = append(resp.SkippedFiles, skippedFile)
+} // LogSkipped 
+
+func (resp *Response) LogConverted(convertedFile string) { 
+	resp.Mu.Lock() 
+	defer resp.Mu.Unlock()
+	resp.ConvertedCounter++ 
+	resp.ConvertedFiles = append(resp.ConvertedFiles, convertedFile)
+} // LogConverted 
 
 func UploadHandler(w http.ResponseWriter, r *http.Request) { 
 	response := Response{}
@@ -219,105 +234,148 @@ func UploadHandler(w http.ResponseWriter, r *http.Request) {
 			// we are expecting the amount of urls passed by the user 
 			// to finish processing before continuing
 			wg.Add(len(r.MultipartForm.Value["urls"]))
+			// wg.Add(1)
+			fmt.Println(len(r.MultipartForm.Value["urls"]))
 
 			// make channel to store converted files 
 			convertedChan := make(chan ConvertedFile)
 
-			for _, rawURL := range r.MultipartForm.Value["urls"] { 
+			for i, rawURL := range r.MultipartForm.Value["urls"] { 
 
 				// make converted file object to store information about file being 
 				// processed 
-				convertedFile := ConvertedFile{}
-
+				// rebind url
+				fmt.Println("RIGHT BEFORE ROUTINE")
+				url := rawURL
+				id := i
+				fmt.Println(id)
 				go func() { 
-					
-
+					defer wg.Done() 
+					// fmt.Println("Testing 1" , id)
+					convertedFile := ConvertedFile{}
 					// all download, validation, and conversion logic will go here
+					// attempt to download file, if not, return custom error message 
+					fileReader, err := utils.DownloadFile(url)
+					if err != nil { 
+						// here is where you would use mutex
+						response.LogSkipped(err.Error())
+						return
+						// response.SkippedCounter++ 
+						// response.SkippedFiles = append(response.SkippedFiles, err.Error())
+					} // if 
+
+					fileBuf, _ := io.ReadAll(fileReader)
+					
+					// create readers for validation and conversion
+					validationReader := io.NopCloser(bytes.NewReader(fileBuf))
+					conversionReader := io.NopCloser(bytes.NewReader(fileBuf))
+					
+					// fmt.Println("Testing 3: ", id)
+					// retrieve file type again based on revalidation 
+					csvErr := utils.ValidateCSV(validationReader)
+					// fmt.Println("Testing 4: ", id)
+					var fileType string
+					if csvErr != nil { 
+						fileType = ".json"
+					} else { 
+						fileType = ".csv"
+					} // if 
+					var outputExt string
+					var convertedContents []byte
+					fmt.Println("Testing 5: ", id)
+					// if file type is json, convert to csv, and vice versa 
+					if fileType == ".json" { 
+						// i think the issue is coming from this conversion line
+						// !!!!!
+						convertedContents, err = utils.ConvertToCSV(conversionReader)
+						// fmt.Println("Testing 6: ", id)
+						outputExt = ".csv"
+						// fmt.Println("Testing 7: ", id)
+						if err != nil { 
+							// fmt.Println("Testing 8: ", id)
+							msg := "URL " + url + " skipped: could not convert"
+							// fmt.Println("Testing 9: ", id)
+							response.LogSkipped(msg)
+							// fmt.Println("Testing 2: ", id)
+							return
+							// response.SkippedCounter++
+							// response.SkippedFiles = append(response.SkippedFiles, msg)
+						} // if 
+						// fmt.Println("Testing 10: ", id)
+					} else if fileType == ".csv" { 
+						convertedContents, err = utils.ConvertToJSON(conversionReader)
+						outputExt = ".json"
+						if err != nil { 
+							msg := "URL " + url + " skipped: could not convert"
+							response.LogSkipped(msg)
+							return
+							// response.SkippedCounter++
+							// response.SkippedFiles = append(response.SkippedFiles, msg)
+						} // if 
+					} // if 
+					
+					// make file (determine file name here) to write converted contents to
+							// maybe use raw url to construct name for file
+					URLBase := path.Base(url)
+					t := time.Now()
+					formattedTime := fmt.Sprintf("%d-%02d-%02dT%02d-%02d-%02d",
+						t.Year(), t.Month(), t.Day(),
+						t.Hour(), t.Minute(), t.Second())
+					newFileName := URLBase + "-" + formattedTime + outputExt
+					
+					// // write that file to the zip  
+					// fileWriter, err := zipWriter.Create(newFileName)
+					// if err != nil { 
+					// 	http.Error(w, "Internal server error", http.StatusInternalServerError)
+					// 	return
+					// } // if 
+					// _, err = fileWriter.Write(convertedContents)
+					// if err != nil { 
+					// 	http.Error(w, "Internal server error", http.StatusInternalServerError)
+					// 	return
+					// } // if 
+
+					response.LogConverted(newFileName)
+					// response.ConvertedFiles = append(response.ConvertedFiles, newFileName)
+					// response.ConvertedCounter++
+
 					// fill out convertedFile object, pass to channel 
-					convertedFile.FileName := fileNamePlaceholder
-					convertedFile.Content := contentPlaceholder
-
+					convertedFile.FileName = newFileName
+					convertedFile.Contents = convertedContents 
+					
 					convertedChan <- convertedFile
-
-					wg.Done() 
+					
 				}() // routine 
 				
-				wg.Wait()
-				close(convertedChan)
-				// attempt to download file, if not, return custom error message 
-				fileReader, err := utils.DownloadFile(rawURL)
-				if err != nil { 
-					response.SkippedCounter++ 
-					response.SkippedFiles = append(response.SkippedFiles, err.Error())
-					continue
-				} // if 
-
-				fileBuf, _ := io.ReadAll(fileReader)
 				
-				// create readers for validation and conversion
-				validationReader := io.NopCloser(bytes.NewReader(fileBuf))
-				conversionReader := io.NopCloser(bytes.NewReader(fileBuf))
-				
-				// retrieve file type again based on revalidation 
-				csvErr := utils.ValidateCSV(validationReader)
-				var fileType string
-				if csvErr != nil { 
-					fileType = ".json"
-				} else { 
-					fileType = ".csv"
-				} // if 
-				var outputExt string
-				var convertedContents []byte
-				// if file type is json, convert to csv, and vice versa 
-				if fileType == ".json" { 
-					convertedContents, err = utils.ConvertToCSV(conversionReader)
-					outputExt = ".csv"
-					if err != nil { 
-						msg := "URL " + rawURL + " skipped: could not convert"
-						response.SkippedCounter++
-						response.SkippedFiles = append(response.SkippedFiles, msg)
-						continue
-					} // if 
-				} else if fileType == ".csv" { 
-					convertedContents, err = utils.ConvertToJSON(conversionReader)
-					outputExt = ".json"
-					if err != nil { 
-						msg := "URL " + rawURL + " skipped: could not convert"
-						response.SkippedCounter++
-						response.SkippedFiles = append(response.SkippedFiles, msg)
-						continue
-					} // if 
-				} // if 
-				
-				// make file (determine file name here) to write converted contents to
-						// maybe use raw url to construct name for file
-				URLBase := path.Base(rawURL)
-				t := time.Now()
-				formattedTime := fmt.Sprintf("%d-%02d-%02dT%02d-%02d-%02d",
-       				t.Year(), t.Month(), t.Day(),
-       				t.Hour(), t.Minute(), t.Second())
-				newFileName := URLBase + "-" + formattedTime + outputExt
-				
-				// write that file to the zip  
-				fileWriter, err := zipWriter.Create(newFileName)
-				if err != nil { 
-					http.Error(w, "Internal server error", http.StatusInternalServerError)
-					return
-				} // if 
-				_, err = fileWriter.Write(convertedContents)
-				if err != nil { 
-					http.Error(w, "Internal server error", http.StatusInternalServerError)
-					return
-				} // if 
-				response.ConvertedFiles = append(response.ConvertedFiles, newFileName)
-				response.ConvertedCounter++
 			} // for	
-
+			fmt.Println(convertedChan)
+			for f := range convertedChan { 
+				file :=  f.FileName
+				fmt.Println(file)
+			}
+			fmt.Println("Right before wg.Wait()")
 			// wait for all routines to finish 
 			wg.Wait()
-
+			fmt.Println("Right after wg.Wait()")
+			
+			fmt.Println("RIGHT BEFORE CHAN LOOP")
+			// loop through channel to extract file contents and write to zip file
+			for f := range convertedChan { 
+					fmt.Println("Writing to zip: ", f.FileName)
+					fileWriter, err := zipWriter.Create(f.FileName)
+					if err != nil { 
+						http.Error(w, "Internal server error", http.StatusInternalServerError)
+						return
+					} // if 
+					_, err = fileWriter.Write(f.Contents)
+					if err != nil { 
+						http.Error(w, "Internal server error", http.StatusInternalServerError)
+						return
+					} // if 
+			} // for
 			// close channel here
-
+			close(convertedChan)
 		} else { 
 			http.Error(w, "Missing non-form field 'urls'", http.StatusBadRequest)
 		} // if 
