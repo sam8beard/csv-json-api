@@ -26,9 +26,15 @@ In short, the CSV format generally adheres to RFC 4180.
 ### Planned features (stretch)
 - Stream-based processing for large files 
 
-## Installation
+## How to build and run
 
-`go build -o api main.go`
+`./build.sh`
+
+`./api`
+
+or to run in the background
+
+`./api &`
 
 ## Usage / Examples 
 ```bash
