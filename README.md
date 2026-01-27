@@ -1,5 +1,5 @@
 # CSV-JSON Converter API
- A simple, stateless backend API written in Go for converting `.csv` files to `.json` files and vice versa. This API leverages Go's concurrency features to perform fast and efficient conversions. Uploaded files are processed and returned in a `.zip` archive. I've been eager to learn Go for some time, and this seemed like a suitable first project to tackle while familiarizing myself with some of the basics.
+ A simple API written in Go for converting `.csv` files to `.json` files and vice versa. This API leverages Go's concurrency features to perform fast and efficient conversions. Uploaded files are processed and returned in a `.zip` archive. I've been eager to learn Go for some time, and this seemed like a suitable first project to tackle while familiarizing myself with some of the basics.
 
 ## NOTES
  - This API only supports flat JSON objects for conversion purposes. 
